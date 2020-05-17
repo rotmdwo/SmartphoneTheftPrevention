@@ -8,6 +8,17 @@ from keras.layers.core import Dense, Activation, Dropout
 import tensorflow as tf
 import numpy as np
 
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import db
+
+db_url = 'https://autosen-7011c.firebaseio.com/'
+
+# 서비스 계정의 비공개 키 파일이름
+cred = credentials.Certificate("d:\\Android\\AndroidStudioProjects\\AUToSen\\model\\autosen-7011c-firebase-adminsdk-0fofm-ddf8fd56e1.json")
+
+default_app = firebase_admin.initialize_app(cred, {'databaseURL':db_url})
+
 epochs = 10
 num_neurons = 100
 seq_len = 10    # 10Hz의 센서 데이터 이용
@@ -72,6 +83,11 @@ def load_data(filename, seq_len, pred_len):
     return [X_train, y_train, X_test, y_test]
 
 X_train, y_train, X_test, y_test = load_data('sample.txt', seq_len, pred_len)
+
+ref = db.reference('1').child('Accelerometer').child('1')
+row = ref.get()
+print(row)
+
 
 # Input은 3차원 , Output은 2차원 데이터를 필요로 함
 # input_shape에서 맨 앞 차원(데이터 수)는 적지 않고 2차원, 3차원 크기만 씀
