@@ -25,11 +25,24 @@ class MainActivity : AppCompatActivity() {
         val obj = object: MyReceiver.Receiver {
             override fun onReceiverResult(resultCode: Int, resultData: Bundle){
                 if (resultCode == RESULT_CODE) {
-                    val string = resultData.getString("str")
-                    val numOfAccelerometerData = resultData.getInt("numOfAccelerometerData")
-                    val numOfMagnetometerData = resultData.getInt("numOfMagnetometerData")
-                    val numOfGyroscopeData = resultData.getInt("numOfGyroscopeData")
-                    textView.text = "acc: ${numOfAccelerometerData}개  mag: ${numOfMagnetometerData}개  gyro: ${numOfGyroscopeData}개"
+                    //val string = resultData.getString("str")
+                    val accelerometerData = resultData.getFloatArray("accelerometerData")
+                    val magnetometerData = resultData.getFloatArray("magnetometerData")
+                    val gyroscopeData = resultData.getFloatArray("gyroscopeData")
+                    val numOfAccelerometerData = resultData.getIntArray("numOfAccelerometerData")
+                    val numOfMagnetometerData = resultData.getIntArray("numOfMagnetometerData")
+                    val numOfGyroscopeData = resultData.getIntArray("numOfGyroscopeData")
+
+                    for (i in 0 until numOfAccelerometerData.size) {
+                        textView.text = "${textView.text} ${numOfAccelerometerData[i]}개"
+                    }
+                    for (i in 0 until numOfMagnetometerData.size) {
+                        textView.text = "${textView.text} ${numOfMagnetometerData[i]}개"
+                    }
+                    for (i in 0 until numOfGyroscopeData.size) {
+                        textView.text = "${textView.text} ${numOfGyroscopeData[i]}개"
+                    }
+
                     button.isClickable = true
                 }
             }

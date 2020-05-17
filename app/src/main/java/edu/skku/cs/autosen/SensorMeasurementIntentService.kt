@@ -18,13 +18,22 @@ import java.text.SimpleDateFormat
 class SensorMeasurementIntentService : IntentService("SensorMeasurementIntentService") {
     val timeFormat = SimpleDateFormat("mm:ss:SSS")
     var str = ""
-    val accelerometerData = FloatArray(1000, {0.0f})
-    val magnetometerData = FloatArray(1000, {0.0f})
-    val gyroscopeData = FloatArray(1000, {0.0f})
-    var numOfAccelerometerData: Int = 0
-    var numOfMagnetometerData: Int = 0
-    var numOfGyroscopeData: Int = 0
 
+    // 시간 설정
+    val seconds: Long = 5 * 60
+    val delayedTime : Long = 1000 * seconds
+    var previousTime = 0L
+    var elapsedTime = 0L
+
+    // 각 초 마다의 수집된 데이터 개수
+    var numOfAccelerometerData = IntArray((seconds + 1).toInt(), {0})
+    var numOfMagnetometerData = IntArray((seconds + 1).toInt(), {0})
+    var numOfGyroscopeData = IntArray((seconds + 1).toInt(), {0})
+
+    // 각 센서 데이터. x, y, z 순서로 들어감.
+    val accelerometerData = FloatArray(100000, {0.0f})
+    val magnetometerData = FloatArray(100000, {0.0f})
+    val gyroscopeData = FloatArray(100000, {0.0f})
 
     override fun onHandleIntent(intent: Intent?) {
         val handlerThread = HandlerThread("background-thread")
@@ -43,18 +52,17 @@ class SensorMeasurementIntentService : IntentService("SensorMeasurementIntentSer
         val magneticLis = MagneticListener()
 
 
-        val seconds = 1L
-        val delayedTime : Long = 1000 * seconds
+        previousTime = System.currentTimeMillis()
 
         // 레지스터 등록. 마지막 Parameter로 수집 속도 결정 10^-6초 단위
         sensorManager.registerListener(acceleroLis, acceleroSensor, 10000)
         sensorManager.registerListener(gyroLis, gyroSensor, 10000)
         sensorManager.registerListener(magneticLis, magneticSensor, 10000)
 
-
         val resultReceiver = intent!!.getParcelableExtra<ResultReceiver>("receiver")
         var bundle = Bundle()
 
+        previousTime = System.currentTimeMillis()
 
         mHandler.postDelayed({
             sensorManager.unregisterListener(acceleroLis)
@@ -68,13 +76,18 @@ class SensorMeasurementIntentService : IntentService("SensorMeasurementIntentSer
             startActivity(backIntent)
             */
 
-            bundle.putString("str",str)
-            bundle.putInt("numOfAccelerometerData", numOfAccelerometerData)
-            bundle.putInt("numOfMagnetometerData", numOfMagnetometerData)
-            bundle.putInt("numOfGyroscopeData", numOfGyroscopeData)
+            // 액티비티로 데이터 보내기
+            //bundle.putString("str",str)
+            //bundle.putInt("numOfAccelerometerData", numOfAccelerometerData)
+            //bundle.putInt("numOfMagnetometerData", numOfMagnetometerData)
+            //bundle.putInt("numOfGyroscopeData", numOfGyroscopeData)
+            bundle.putIntArray("numOfAccelerometerData", numOfAccelerometerData)
+            bundle.putIntArray("numOfMagnetometerData", numOfMagnetometerData)
+            bundle.putIntArray("numOfGyroscopeData", numOfGyroscopeData)
+            bundle.putFloatArray("accelerometerData", accelerometerData)
+            bundle.putFloatArray("magnetometerData", magnetometerData)
+            bundle.putFloatArray("gyroscopeData", gyroscopeData)
             resultReceiver.send(RESULT_CODE, bundle)
-
-
 
         }, delayedTime)
     }
@@ -88,11 +101,12 @@ class SensorMeasurementIntentService : IntentService("SensorMeasurementIntentSer
         override fun onSensorChanged(p0: SensorEvent?) {
             if (p0!!.sensor.type == Sensor.TYPE_ACCELEROMETER) {
                 //textView.text = "${textView.text}${timeFormat.format(System.currentTimeMillis())} accX: ${p0!!.values[0]} accY: ${p0!!.values[1]} accZ: ${p0!!.values[2]}\n"
-                str += "${timeFormat.format(System.currentTimeMillis())} accX: ${p0!!.values[0]} accY: ${p0!!.values[1]} accZ: ${p0!!.values[2]}\n"
-                accelerometerData[numOfAccelerometerData * 3 + 0] = p0.values[0]
-                accelerometerData[numOfAccelerometerData * 3 + 1] = p0.values[1]
-                accelerometerData[numOfAccelerometerData * 3 + 2] = p0.values[2]
-                numOfAccelerometerData++
+                //str += "${timeFormat.format(System.currentTimeMillis())} accX: ${p0!!.values[0]} accY: ${p0!!.values[1]} accZ: ${p0!!.values[2]}\n"
+                elapsedTime = System.currentTimeMillis() - previousTime
+                accelerometerData[numOfAccelerometerData[(elapsedTime / 1000).toInt()] * 3 + 0] = p0.values[0]
+                accelerometerData[numOfAccelerometerData[(elapsedTime / 1000).toInt()] * 3 + 1] = p0.values[1]
+                accelerometerData[numOfAccelerometerData[(elapsedTime / 1000).toInt()] * 3 + 2] = p0.values[2]
+                numOfAccelerometerData[(elapsedTime / 1000).toInt()]++
             }
         }
     }
@@ -106,11 +120,12 @@ class SensorMeasurementIntentService : IntentService("SensorMeasurementIntentSer
         override fun onSensorChanged(p0: SensorEvent?) {
             if (p0!!.sensor.type == Sensor.TYPE_GYROSCOPE) {
                 //textView.text = "${textView.text}${timeFormat.format(System.currentTimeMillis())} gyroX: ${p0!!.values[0]} gyroY: ${p0!!.values[1]} gyroZ: ${p0!!.values[2]}\n"
-                str += "${timeFormat.format(System.currentTimeMillis())} gyroX: ${p0!!.values[0]} gyroY: ${p0!!.values[1]} gyroZ: ${p0!!.values[2]}\n"
-                gyroscopeData[numOfGyroscopeData * 3 + 0] = p0.values[0]
-                gyroscopeData[numOfGyroscopeData * 3 + 1] = p0.values[1]
-                gyroscopeData[numOfGyroscopeData * 3 + 2] = p0.values[2]
-                numOfGyroscopeData++
+                //str += "${timeFormat.format(System.currentTimeMillis())} gyroX: ${p0!!.values[0]} gyroY: ${p0!!.values[1]} gyroZ: ${p0!!.values[2]}\n"
+                elapsedTime = System.currentTimeMillis() - previousTime
+                gyroscopeData[numOfGyroscopeData[(elapsedTime / 1000).toInt()] * 3 + 0] = p0.values[0]
+                gyroscopeData[numOfGyroscopeData[(elapsedTime / 1000).toInt()] * 3 + 1] = p0.values[1]
+                gyroscopeData[numOfGyroscopeData[(elapsedTime / 1000).toInt()] * 3 + 2] = p0.values[2]
+                numOfGyroscopeData[(elapsedTime / 1000).toInt()]++
             }
         }
     }
@@ -124,11 +139,12 @@ class SensorMeasurementIntentService : IntentService("SensorMeasurementIntentSer
         override fun onSensorChanged(p0: SensorEvent?) {
             if (p0!!.sensor.type == Sensor.TYPE_MAGNETIC_FIELD) {
                 //textView.text = "${textView.text}${timeFormat.format(System.currentTimeMillis())} magX: ${p0!!.values[0]} magY: ${p0!!.values[1]} magZ: ${p0!!.values[2]}\n"
-                str += "${timeFormat.format(System.currentTimeMillis())} magX: ${p0!!.values[0]} magY: ${p0!!.values[1]} magZ: ${p0!!.values[2]}\n"
-                magnetometerData[numOfMagnetometerData * 3 + 0] = p0.values[0]
-                magnetometerData[numOfMagnetometerData * 3 + 1] = p0.values[1]
-                magnetometerData[numOfMagnetometerData * 3 + 2] = p0.values[2]
-                numOfMagnetometerData++
+                //str += "${timeFormat.format(System.currentTimeMillis())} magX: ${p0!!.values[0]} magY: ${p0!!.values[1]} magZ: ${p0!!.values[2]}\n"
+                elapsedTime = System.currentTimeMillis() - previousTime
+                magnetometerData[numOfMagnetometerData[(elapsedTime / 1000).toInt()] * 3 + 0] = p0.values[0]
+                magnetometerData[numOfMagnetometerData[(elapsedTime / 1000).toInt()] * 3 + 1] = p0.values[1]
+                magnetometerData[numOfMagnetometerData[(elapsedTime / 1000).toInt()] * 3 + 2] = p0.values[2]
+                numOfMagnetometerData[(elapsedTime / 1000).toInt()]++
             }
         }
     }
