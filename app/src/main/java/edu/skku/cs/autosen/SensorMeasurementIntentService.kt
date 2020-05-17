@@ -103,10 +103,15 @@ class SensorMeasurementIntentService : IntentService("SensorMeasurementIntentSer
                 //textView.text = "${textView.text}${timeFormat.format(System.currentTimeMillis())} accX: ${p0!!.values[0]} accY: ${p0!!.values[1]} accZ: ${p0!!.values[2]}\n"
                 //str += "${timeFormat.format(System.currentTimeMillis())} accX: ${p0!!.values[0]} accY: ${p0!!.values[1]} accZ: ${p0!!.values[2]}\n"
                 elapsedTime = System.currentTimeMillis() - previousTime
-                accelerometerData[numOfAccelerometerData[(elapsedTime / 1000).toInt()] * 3 + 0] = p0.values[0]
-                accelerometerData[numOfAccelerometerData[(elapsedTime / 1000).toInt()] * 3 + 1] = p0.values[1]
-                accelerometerData[numOfAccelerometerData[(elapsedTime / 1000).toInt()] * 3 + 2] = p0.values[2]
-                numOfAccelerometerData[(elapsedTime / 1000).toInt()]++
+                val index = (elapsedTime / 1000).toInt()
+                var base = 0
+                for (i in 0..index) {
+                    base += numOfAccelerometerData[i]
+                }
+                accelerometerData[base * 3 + 0] = p0.values[0]
+                accelerometerData[base * 3 + 1] = p0.values[1]
+                accelerometerData[base * 3 + 2] = p0.values[2]
+                numOfAccelerometerData[index]++
             }
         }
     }
@@ -122,10 +127,15 @@ class SensorMeasurementIntentService : IntentService("SensorMeasurementIntentSer
                 //textView.text = "${textView.text}${timeFormat.format(System.currentTimeMillis())} gyroX: ${p0!!.values[0]} gyroY: ${p0!!.values[1]} gyroZ: ${p0!!.values[2]}\n"
                 //str += "${timeFormat.format(System.currentTimeMillis())} gyroX: ${p0!!.values[0]} gyroY: ${p0!!.values[1]} gyroZ: ${p0!!.values[2]}\n"
                 elapsedTime = System.currentTimeMillis() - previousTime
-                gyroscopeData[numOfGyroscopeData[(elapsedTime / 1000).toInt()] * 3 + 0] = p0.values[0]
-                gyroscopeData[numOfGyroscopeData[(elapsedTime / 1000).toInt()] * 3 + 1] = p0.values[1]
-                gyroscopeData[numOfGyroscopeData[(elapsedTime / 1000).toInt()] * 3 + 2] = p0.values[2]
-                numOfGyroscopeData[(elapsedTime / 1000).toInt()]++
+                val index = (elapsedTime / 1000).toInt()
+                var base = 0
+                for (i in 0..index) {
+                    base += numOfGyroscopeData[i]
+                }
+                gyroscopeData[base * 3 + 0] = p0.values[0]
+                gyroscopeData[base * 3 + 1] = p0.values[1]
+                gyroscopeData[base * 3 + 2] = p0.values[2]
+                numOfGyroscopeData[index]++
             }
         }
     }
@@ -141,10 +151,15 @@ class SensorMeasurementIntentService : IntentService("SensorMeasurementIntentSer
                 //textView.text = "${textView.text}${timeFormat.format(System.currentTimeMillis())} magX: ${p0!!.values[0]} magY: ${p0!!.values[1]} magZ: ${p0!!.values[2]}\n"
                 //str += "${timeFormat.format(System.currentTimeMillis())} magX: ${p0!!.values[0]} magY: ${p0!!.values[1]} magZ: ${p0!!.values[2]}\n"
                 elapsedTime = System.currentTimeMillis() - previousTime
-                magnetometerData[numOfMagnetometerData[(elapsedTime / 1000).toInt()] * 3 + 0] = p0.values[0]
-                magnetometerData[numOfMagnetometerData[(elapsedTime / 1000).toInt()] * 3 + 1] = p0.values[1]
-                magnetometerData[numOfMagnetometerData[(elapsedTime / 1000).toInt()] * 3 + 2] = p0.values[2]
-                numOfMagnetometerData[(elapsedTime / 1000).toInt()]++
+                val index = (elapsedTime / 1000).toInt()
+                var base = 0
+                for (i in 0..index) {
+                    base += numOfMagnetometerData[i]
+                }
+                magnetometerData[base * 3 + 0] = p0.values[0]
+                magnetometerData[base * 3 + 1] = p0.values[1]
+                magnetometerData[base * 3 + 2] = p0.values[2]
+                numOfMagnetometerData[index]++
             }
         }
     }
