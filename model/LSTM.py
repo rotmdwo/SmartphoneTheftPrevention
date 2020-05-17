@@ -13,9 +13,10 @@ from firebase_admin import credentials
 from firebase_admin import db
 
 db_url = 'https://autosen-7011c.firebaseio.com/'
+firebase_json_location = "d:\\Android\\AndroidStudioProjects\\AUToSen\\model\\autosen-7011c-firebase-adminsdk-0fofm-ddf8fd56e1.json"
 
 # 서비스 계정의 비공개 키 파일이름
-cred = credentials.Certificate("d:\\Android\\AndroidStudioProjects\\AUToSen\\model\\autosen-7011c-firebase-adminsdk-0fofm-ddf8fd56e1.json")
+cred = credentials.Certificate(firebase_json_location)
 
 default_app = firebase_admin.initialize_app(cred, {'databaseURL':db_url})
 

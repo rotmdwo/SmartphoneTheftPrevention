@@ -23,9 +23,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val obj = object: MyReceiver.Receiver {
-            override fun onReceiverResult(resultCode: Int, resultData: Bundle){Log.d("asdf","11")
+            override fun onReceiverResult(resultCode: Int, resultData: Bundle){
                 if (resultCode == RESULT_CODE) {
-                    textView.text = resultData.getString("str")
+                    val string = resultData.getString("str")
+                    val numOfAccelerometerData = resultData.getInt("numOfAccelerometerData")
+                    val numOfMagnetometerData = resultData.getInt("numOfMagnetometerData")
+                    val numOfGyroscopeData = resultData.getInt("numOfGyroscopeData")
+                    textView.text = "acc: ${numOfAccelerometerData}개  mag: ${numOfMagnetometerData}개  gyro: ${numOfGyroscopeData}개"
                     button.isClickable = true
                 }
             }
