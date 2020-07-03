@@ -1,19 +1,11 @@
 package edu.skku.cs.autosen
 
-import android.content.Context
 import android.content.Intent
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
-import android.os.ResultReceiver
-import android.util.Log
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
-import java.text.SimpleDateFormat
 
 const val RESULT_CODE = 101
 
@@ -249,7 +241,7 @@ class MainActivity : AppCompatActivity() {
                 button.isClickable = true
             } else {
                 // Start Service
-                val intent = Intent(applicationContext, SensorMeasurementIntentService::class.java)
+                val intent = Intent(applicationContext, SensorMeasurementService::class.java)
                 intent.putExtra("receiver",reciever )
                 startService(intent)
             }

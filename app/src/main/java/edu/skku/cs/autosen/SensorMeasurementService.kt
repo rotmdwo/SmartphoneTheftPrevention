@@ -1,21 +1,21 @@
 package edu.skku.cs.autosen
 
-import android.app.IntentService
-import android.content.Intent
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Service
 import android.content.Context
+import android.content.Intent
+import android.graphics.Color
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.os.Bundle
-import android.os.Handler
-import android.os.HandlerThread
-import android.os.ResultReceiver
+import android.os.*
 import android.util.Log
-import kotlinx.android.synthetic.main.activity_main.*
 import java.text.SimpleDateFormat
 
-class SensorMeasurementIntentService : IntentService("SensorMeasurementIntentService") {
+class SensorMeasurementService : Service() {
     val timeFormat = SimpleDateFormat("mm:ss:SSS")
     var str = ""
 
@@ -35,7 +35,30 @@ class SensorMeasurementIntentService : IntentService("SensorMeasurementIntentSer
     val magnetometerData = FloatArray(100000, {0.0f})
     val gyroscopeData = FloatArray(100000, {0.0f})
 
-    override fun onHandleIntent(intent: Intent?) {
+    val ANDROID_CHANNNEL_ID = "edu.skku.cs.autosen"
+    val NOTIFICATION_ID = 5534
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // For foreground service
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationChannel = NotificationChannel(ANDROID_CHANNNEL_ID,
+                "Retrieve Sensor Data", NotificationManager.IMPORTANCE_NONE)
+
+            notificationChannel.lightColor = Color.WHITE
+            notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(notificationChannel)
+
+            val notificationBuilder = Notification.Builder(this, ANDROID_CHANNNEL_ID)
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText("센서 데이터를 수집중입니다.")
+
+            val notification = notificationBuilder.build()
+
+            startForeground(NOTIFICATION_ID, notification)
+        }
+
         val handlerThread = HandlerThread("background-thread")
         handlerThread.start()
         val mHandler = Handler(handlerThread.looper)
@@ -90,6 +113,12 @@ class SensorMeasurementIntentService : IntentService("SensorMeasurementIntentSer
             resultReceiver.send(RESULT_CODE, bundle)
 
         }, delayedTime)
+
+        return Service.START_REDELIVER_INTENT
+    }
+
+    override fun onBind(intent: Intent): IBinder? {
+        return null
     }
 
     inner class AccelerometerListener : SensorEventListener {
@@ -112,6 +141,8 @@ class SensorMeasurementIntentService : IntentService("SensorMeasurementIntentSer
                 accelerometerData[base * 3 + 1] = p0.values[1]
                 accelerometerData[base * 3 + 2] = p0.values[2]
                 numOfAccelerometerData[index]++
+
+                Log.d("asdf","collecting: " + p0.values[0])
             }
         }
     }
