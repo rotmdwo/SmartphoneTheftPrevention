@@ -20,7 +20,8 @@ class SensorMeasurementService : Service() {
     var str = ""
 
     // 시간 설정
-    val seconds: Long = 5 * 60
+    val minutes: Long = 5
+    val seconds: Long = minutes * 60
     val delayedTime : Long = 1000 * seconds
     var previousTime = 0L
     var elapsedTime = 0L
@@ -142,7 +143,7 @@ class SensorMeasurementService : Service() {
                 accelerometerData[base * 3 + 2] = p0.values[2]
                 numOfAccelerometerData[index]++
 
-                Log.d("asdf","collecting: " + p0.values[0])
+                //Log.d("asdf","collecting: " + p0.values[0])
             }
         }
     }

@@ -4,13 +4,13 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.ResultReceiver
 
-public class MyReceiver(handler: Handler) : ResultReceiver(handler) {
+class MyReceiver(handler: Handler) : ResultReceiver(handler) {
     private var receiver: Receiver? = null
 
     fun setReceiver(receiver1: Receiver) {
         this.receiver = receiver1
     }
-    public interface Receiver {
+    interface Receiver {
         fun onReceiverResult(resultCode: Int, resultData: Bundle)
     }
     override fun onReceiveResult(resultCode: Int, resultData: Bundle) {
