@@ -26,7 +26,7 @@ seq_len = 64    # 64Hz의 센서 데이터 이용
 sample_len = 9 # 센서데이터 9개
 pred_len = 1
 
-user_id = "rotmdwo"
+user_id = "rotmdwo1"
 num_of_other_users_data = 5
 
 '''
@@ -90,10 +90,32 @@ def load_data(filename, seq_len, pred_len):
 
 def load_data(user_id, seq_len, pred_len):
     ref = db.reference("Sensor_Data")
-    snapshot_self = ref.child(user_id).get()
-    snapshot_others = ref.order_by_key().limit_to_first(num_of_other_users_data).get()
-    
+    # 딕셔너리 형태 .. Dictionary[key]로 value에 접근
+    snapshot_self = ref.child(user_id).get() # 스마트폰 주인의 데이터 reference
+    snapshot_others = ref.order_by_key().limit_to_first(num_of_other_users_data + 1).get() # 타인들의 데이터들 reference
+
+    result = [] # 9개의 센서 데이터와 주인 여부를 1초 단위로 묶은 것 => 3차원 배열
+
+    # 스마트폰 주인의 데이터 불러오기
+    for sec in snapshot_self:
+        secondDataList2D = []
+        secondDataDictionary2D = snapshot_self[sec]
+
+        for dataSet in secondDataDictionary2D:
+            oneOver64HzDataList1D = []
+            oneOver64HzDataDictionary1D = secondDataDictionary2D[dataSet]
+
+            for data in oneOver64HzDataDictionary1D:
+                oneOver64HzDataList1D.append(oneOver64HzDataDictionary1D[data])
+
+            oneOver64HzDataList1D.append(0) # 스마트폰의 주인이라는 의미하는 class 추가
+            secondDataList2D.append(oneOver64HzDataList1D)
+
+        result.append(secondDataList2D)
+
+    '''
     # 한 줄 씩 읽어오기
+   
     f = open(filename, 'r').read()
     data_string = f.split('\n')
     d = list() # 9개의 센서 데이터 셋의 나열 => 2차원 배열
@@ -109,13 +131,16 @@ def load_data(user_id, seq_len, pred_len):
     result = []  # 9개의 센서 데이터를 1초 단위로 묶은 것 => 3차원 배열
     for i in range(int(len(d) / seq_len)):
         result.append(d[i * seq_len : (i + 1) * seq_len])
-
+    '''
     # 데이터를 8:2 비율로 Train:Validation 데이터로 나눔
+    # 유저의 데이터의 개수가 달라지면 이 부분에서 오류가 남. 리스트의 차원이 정의되지 않음.
+    # 그러므로 안드로이드에서 데이터 수집할 때 정확히 5분 동안 같은 양의 데이터가 전송되게 해야 함!
     result = np.array(result)
     row = int(round(0.8 * result.shape[0]))
-    train = result[ : row, : , : ]
-    test = result[row : , : , : ]
+    train = result[ : row, : , :]
+    test = result[row : , : , :]
 
+    # TODO: 셔플을 Train 데이터와 Test 데이터로 나누기 전에 해야 함. 셔플 전에 하면 Train 데이터에 스마트폰 주인 데이터가 쏠림.
     np.random.shuffle(train)
 
     # 인풋데이터 파싱
@@ -150,7 +175,7 @@ def load_data(user_id, seq_len, pred_len):
 
 #X_train, y_train, X_test, y_test = load_data('sample.txt', seq_len, pred_len)
 X_train, y_train, X_test, y_test = load_data(user_id, seq_len, pred_len)
-
+'''
 ref = db.reference('1').child('Accelerometer').child('1')
 row = ref.get()
 print(row)
@@ -179,3 +204,4 @@ model.fit(np.array(X_train), np.array(y_train), batch_size= 32, epochs=epochs, v
 
 print(model.output.op.name)
 print(model.input.op.name)
+'''
