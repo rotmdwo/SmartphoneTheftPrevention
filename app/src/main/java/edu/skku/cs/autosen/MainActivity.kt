@@ -310,6 +310,7 @@ class MainActivity : AppCompatActivity() {
 
                         //TODO arrayList에 넣은 64개의 데이터를 파이어베이스에 업로드 하는 코드
 
+
                         baseNumOfAc += numOfAccelerometerData[i]
                     }
                 }

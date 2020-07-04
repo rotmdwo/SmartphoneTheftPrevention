@@ -22,15 +22,19 @@ default_app = firebase_admin.initialize_app(cred, {'databaseURL':db_url})
 
 epochs = 10
 num_neurons = 100
-seq_len = 10    # 10Hz의 센서 데이터 이용
+seq_len = 64    # 64Hz의 센서 데이터 이용
 sample_len = 9 # 센서데이터 9개
 pred_len = 1
 
+user_id = "rotmdwo"
+num_of_other_users_data = 5
+
+'''
 def load_data(filename, seq_len, pred_len):
     # 한 줄 씩 읽어오기
     f = open(filename, 'r').read()
     data_string = f.split('\n')
-    d = list()
+    d = list() # 9개의 센서 데이터 셋의 나열 => 2차원 배열
 
     # TODO: Normalization
     # 줄 마다 숫자들로 파싱
@@ -41,9 +45,70 @@ def load_data(filename, seq_len, pred_len):
             #d.append(float(j))
 
     # seq_len 만큼의 데이터 마다 합침 --> 1초 간의 데이터들을 하나로
-    result = []  # same as list()
+    result = []  # 9개의 센서 데이터를 1초 단위로 묶은 것 => 3차원 배열
     for i in range(int(len(d) / seq_len)):
-        result.append(d[i * seq_len : i * seq_len + seq_len])
+        result.append(d[i * seq_len : (i + 1) * seq_len])
+
+    # 데이터를 8:2 비율로 Train:Validation 데이터로 나눔
+    result = np.array(result)
+    row = int(round(0.8 * result.shape[0]))
+    train = result[ : row, : , : ]
+    test = result[row : , : , : ]
+
+    np.random.shuffle(train)
+
+    # 인풋데이터 파싱
+    X_train = train[ : , : , : -pred_len]
+    X_test = test[ : , : , : -pred_len]
+
+
+    y_train = []
+    y_test = []
+    #y_test = test[ : , : , -pred_len : ]
+
+    # 아웃풋데이터 파싱
+    for i in train:
+        y_temp = []
+        y_temp.append(i[0][sample_len])
+        y_train.append(y_temp)
+
+    for i in test:
+        y_temp = []
+        y_temp.append(i[0][sample_len])
+        y_test.append(y_temp)
+
+    #X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], X_train.shape[2], 1))
+    #X_test =  np.reshape(X_test, (X_test.shape[0], X_test.shape[1], X_test.shape[2], 1))
+
+    #y_train = np.reshape(y_train, (y_train.shape[0], y_train.shape[1]))
+    #y_test = np.reshape(y_test, (y_test.shape[0], y_train.shape[1]))
+    #y_train = to_categorical(y_train, 2)
+    #y_test = to_categorical(y_test, 2)
+
+    return [X_train, y_train, X_test, y_test]
+'''
+
+def load_data(user_id, seq_len, pred_len):
+    ref = db.reference("Sensor_Data")
+    snapshot_self = ref.child(user_id).get()
+    snapshot_others = ref.order_by_key().limit_to_first(num_of_other_users_data).get()
+    
+    # 한 줄 씩 읽어오기
+    f = open(filename, 'r').read()
+    data_string = f.split('\n')
+    d = list() # 9개의 센서 데이터 셋의 나열 => 2차원 배열
+
+    # 줄 마다 숫자들로 파싱
+    for i in data_string:
+        numbers = i.split(' ')
+        d.append(numbers)
+        #for j in number:
+            #d.append(float(j))
+
+    # seq_len 만큼의 데이터 마다 합침 --> 1초 간의 데이터들을 하나로
+    result = []  # 9개의 센서 데이터를 1초 단위로 묶은 것 => 3차원 배열
+    for i in range(int(len(d) / seq_len)):
+        result.append(d[i * seq_len : (i + 1) * seq_len])
 
     # 데이터를 8:2 비율로 Train:Validation 데이터로 나눔
     result = np.array(result)
@@ -83,7 +148,8 @@ def load_data(filename, seq_len, pred_len):
 
     return [X_train, y_train, X_test, y_test]
 
-X_train, y_train, X_test, y_test = load_data('sample.txt', seq_len, pred_len)
+#X_train, y_train, X_test, y_test = load_data('sample.txt', seq_len, pred_len)
+X_train, y_train, X_test, y_test = load_data(user_id, seq_len, pred_len)
 
 ref = db.reference('1').child('Accelerometer').child('1')
 row = ref.get()
