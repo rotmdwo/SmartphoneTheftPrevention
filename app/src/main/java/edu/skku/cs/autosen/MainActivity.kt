@@ -3,13 +3,11 @@ package edu.skku.cs.autosen
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.android.synthetic.main.activity_main.*
 
-import edu.skku.cs.autosen.SensorMeasurementService.Companion.MINUTES
 import edu.skku.cs.autosen.SensorMeasurementService.Companion.SECONDS
 
 const val RESULT_CODE = 101
@@ -55,7 +53,7 @@ class MainActivity : AppCompatActivity() {
                 val numOfAccelerometerData = resultData.getIntArray("numOfAccelerometerData")
                 val numOfMagnetometerData = resultData.getIntArray("numOfMagnetometerData")
                 val numOfGyroscopeData = resultData.getIntArray("numOfGyroscopeData")
-                
+
                 // 데이터 정규화. 5초 마다 구간 설정.
                 for (i in 0 until (numOfAccelerometerData.size - 1) / 5) {
 
