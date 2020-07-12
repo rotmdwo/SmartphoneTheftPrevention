@@ -3,6 +3,7 @@ package edu.skku.cs.autosen
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.database.FirebaseDatabase
@@ -54,8 +55,7 @@ class MainActivity : AppCompatActivity() {
                 val numOfAccelerometerData = resultData.getIntArray("numOfAccelerometerData")
                 val numOfMagnetometerData = resultData.getIntArray("numOfMagnetometerData")
                 val numOfGyroscopeData = resultData.getIntArray("numOfGyroscopeData")
-
-                // TODO: 데이터 정규화 및 데이터 처리 및 전송과정에서 데이터가 0으로 유실되는 문제 있음. 수정 필요
+                
                 // 데이터 정규화. 5초 마다 구간 설정.
                 for (i in 0 until (numOfAccelerometerData.size - 1) / 5) {
 
@@ -334,9 +334,9 @@ class MainActivity : AppCompatActivity() {
                         val step: Float = numOfMagnetometerData[i].toFloat() / SAMPLING_RATE
 
                         for (j in 0 until SAMPLING_RATE) {
-                            magX.add(magnetometerData[(baseNumOfAc + (step * i).toInt()) * 3])
-                            magY.add(magnetometerData[(baseNumOfAc + (step * i).toInt()) * 3 + 1])
-                            magZ.add(magnetometerData[(baseNumOfAc + (step * i).toInt()) * 3 + 2])
+                            magX.add(magnetometerData[(baseNumOfMa + (step * i).toInt()) * 3])
+                            magY.add(magnetometerData[(baseNumOfMa + (step * i).toInt()) * 3 + 1])
+                            magZ.add(magnetometerData[(baseNumOfMa + (step * i).toInt()) * 3 + 2])
                         }
 
                         baseNumOfMa += numOfMagnetometerData[i]
@@ -351,9 +351,9 @@ class MainActivity : AppCompatActivity() {
                         val step: Float = numOfGyroscopeData[i].toFloat() / SAMPLING_RATE
 
                         for (j in 0 until SAMPLING_RATE) {
-                            gyrX.add(gyroscopeData[(baseNumOfAc + (step * i).toInt()) * 3])
-                            gyrY.add(gyroscopeData[(baseNumOfAc + (step * i).toInt()) * 3])
-                            gyrZ.add(gyroscopeData[(baseNumOfAc + (step * i).toInt()) * 3])
+                            gyrX.add(gyroscopeData[(baseNumOfGr + (step * i).toInt()) * 3])
+                            gyrY.add(gyroscopeData[(baseNumOfGr + (step * i).toInt()) * 3])
+                            gyrZ.add(gyroscopeData[(baseNumOfGr + (step * i).toInt()) * 3])
                         }
 
                         baseNumOfGr += numOfGyroscopeData[i]
