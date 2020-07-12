@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "605650604018",
+    "firebase_url": "https://autosen-7011c.firebaseio.com",
+    "project_id": "autosen-7011c",
+    "storage_bucket": "autosen-7011c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:605650604018:android:6a90d176a3219e3eaa256b",
+        "android_client_info": {
+          "package_name": "edu.skku.cs.autosen"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "605650604018-ru8slm6u8pag19hso787h6f80r5chp6b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcbwONKZU_Dqwe1fz23s3Ff9B9R6iAz8E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "605650604018-ru8slm6u8pag19hso787h6f80r5chp6b.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

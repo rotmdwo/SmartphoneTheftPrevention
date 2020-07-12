@@ -1,11 +1,11 @@
 package edu.skku.cs.autosen
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
-import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.database.FirebaseDatabase
 import kotlinx.android.synthetic.main.activity_main.*
 
 const val RESULT_CODE = 101
@@ -13,6 +13,8 @@ const val RESULT_CODE = 101
 class MainActivity : AppCompatActivity() {
     private var userId = ""
     private val SAMPLING_RATE: Int = 64
+
+    private val reference = FirebaseDatabase.getInstance().getReference().child("Seneor_Data")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -292,20 +294,28 @@ class MainActivity : AppCompatActivity() {
                 var baseNumOfMa = 0
                 var baseNumOfGr = 0
 
+                val accX = ArrayList<Float>(SAMPLING_RATE)
+                val accY = ArrayList<Float>(SAMPLING_RATE)
+                val accZ = ArrayList<Float>(SAMPLING_RATE)
+                val magX = ArrayList<Float>(SAMPLING_RATE)
+                val magY = ArrayList<Float>(SAMPLING_RATE)
+                val magZ = ArrayList<Float>(SAMPLING_RATE)
+                val gyrX = ArrayList<Float>(SAMPLING_RATE)
+                val gyrY = ArrayList<Float>(SAMPLING_RATE)
+                val gyrZ = ArrayList<Float>(SAMPLING_RATE)
+
                 for (i in 0 until numOfAccelerometerData.size - 1) {
                     if (numOfAccelerometerData[i] < SAMPLING_RATE) { // 데이터 수집이 제대로 안 된 경우
                         baseNumOfAc += numOfAccelerometerData[i]
                         continue
                     } else { // 데이터 수집이 제대로 된 경우
-                        val arrayListX = ArrayList<Float>(SAMPLING_RATE)
-                        val arrayListY = ArrayList<Float>(SAMPLING_RATE)
-                        val arrayListZ = ArrayList<Float>(SAMPLING_RATE)
+
                         val step: Float = numOfAccelerometerData[i].toFloat() / SAMPLING_RATE
 
                         for (j in 0 until SAMPLING_RATE) {
-                            arrayListX.add(accelerometerData[(baseNumOfAc + (step * i).toInt()) * 3])
-                            arrayListY.add(accelerometerData[(baseNumOfAc + (step * i).toInt()) * 3 + 1])
-                            arrayListZ.add(accelerometerData[(baseNumOfAc + (step * i).toInt()) * 3 + 2])
+                            accX.add(accelerometerData[(baseNumOfAc + (step * i).toInt()) * 3])
+                            accY.add(accelerometerData[(baseNumOfAc + (step * i).toInt()) * 3 + 1])
+                            accZ.add(accelerometerData[(baseNumOfAc + (step * i).toInt()) * 3 + 2])
                         }
 
                         //TODO arrayList에 넣은 64개의 데이터를 파이어베이스에 업로드 하는 코드
@@ -319,15 +329,13 @@ class MainActivity : AppCompatActivity() {
                         baseNumOfMa += numOfMagnetometerData[i]
                         continue
                     } else { // 데이터 수집이 제대로 된 경우
-                        val arrayListX = ArrayList<Float>(SAMPLING_RATE)
-                        val arrayListY = ArrayList<Float>(SAMPLING_RATE)
-                        val arrayListZ = ArrayList<Float>(SAMPLING_RATE)
+
                         val step: Float = numOfMagnetometerData[i].toFloat() / SAMPLING_RATE
 
                         for (j in 0 until SAMPLING_RATE) {
-                            arrayListX.add(magnetometerData[(baseNumOfAc + (step * i).toInt()) * 3])
-                            arrayListY.add(magnetometerData[(baseNumOfAc + (step * i).toInt()) * 3 + 1])
-                            arrayListZ.add(magnetometerData[(baseNumOfAc + (step * i).toInt()) * 3 + 2])
+                            magX.add(magnetometerData[(baseNumOfAc + (step * i).toInt()) * 3])
+                            magY.add(magnetometerData[(baseNumOfAc + (step * i).toInt()) * 3 + 1])
+                            magZ.add(magnetometerData[(baseNumOfAc + (step * i).toInt()) * 3 + 2])
                         }
 
                         //TODO arrayList에 넣은 64개의 데이터를 파이어베이스에 업로드 하는 코드
@@ -340,15 +348,13 @@ class MainActivity : AppCompatActivity() {
                         baseNumOfGr += numOfGyroscopeData[i]
                         continue
                     } else { // 데이터 수집이 제대로 된 경우
-                        val arrayListX = ArrayList<Float>(SAMPLING_RATE)
-                        val arrayListY = ArrayList<Float>(SAMPLING_RATE)
-                        val arrayListZ = ArrayList<Float>(SAMPLING_RATE)
+
                         val step: Float = numOfGyroscopeData[i].toFloat() / SAMPLING_RATE
 
                         for (j in 0 until SAMPLING_RATE) {
-                            arrayListX.add(gyroscopeData[(baseNumOfAc + (step * i).toInt()) * 3])
-                            arrayListY.add(gyroscopeData[(baseNumOfAc + (step * i).toInt()) * 3])
-                            arrayListZ.add(gyroscopeData[(baseNumOfAc + (step * i).toInt()) * 3])
+                            gyrX.add(gyroscopeData[(baseNumOfAc + (step * i).toInt()) * 3])
+                            gyrY.add(gyroscopeData[(baseNumOfAc + (step * i).toInt()) * 3])
+                            gyrZ.add(gyroscopeData[(baseNumOfAc + (step * i).toInt()) * 3])
                         }
 
                         //TODO arrayList에 넣은 64개의 데이터를 파이어베이스에 업로드 하는 코드
@@ -356,6 +362,17 @@ class MainActivity : AppCompatActivity() {
                         baseNumOfGr += numOfGyroscopeData[i]
                     }
                 }
+
+                // 데이터가 제대로 수집 되었는 지 확인
+                val retrievedNum = accX.size
+                if (accY.size != retrievedNum || accZ.size != retrievedNum || magX.size != retrievedNum || magY.size != retrievedNum ||
+                    magZ.size != retrievedNum || gyrX.size != retrievedNum || gyrY.size != retrievedNum || gyrZ.size != retrievedNum) {
+                    Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다. (수집오류)", Toast.LENGTH_LONG).show()
+                    return
+                }
+
+                // 데이터 업로드
+                
 
                 button.isClickable = true
             }
