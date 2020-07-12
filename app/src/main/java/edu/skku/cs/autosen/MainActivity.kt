@@ -8,13 +8,16 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.android.synthetic.main.activity_main.*
 
+import edu.skku.cs.autosen.SensorMeasurementService.Companion.MINUTES
+import edu.skku.cs.autosen.SensorMeasurementService.Companion.SECONDS
+
 const val RESULT_CODE = 101
 
 class MainActivity : AppCompatActivity() {
     private var userId = ""
     private val SAMPLING_RATE: Int = 64
 
-    private val reference = FirebaseDatabase.getInstance().getReference().child("Seneor_Data")
+    private val reference = FirebaseDatabase.getInstance().getReference().child("Sensor_Data")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +55,7 @@ class MainActivity : AppCompatActivity() {
                 val numOfMagnetometerData = resultData.getIntArray("numOfMagnetometerData")
                 val numOfGyroscopeData = resultData.getIntArray("numOfGyroscopeData")
 
+                // TODO: 데이터 정규화 및 데이터 처리 및 전송과정에서 데이터가 0으로 유실되는 문제 있음. 수정 필요
                 // 데이터 정규화. 5초 마다 구간 설정.
                 for (i in 0 until (numOfAccelerometerData.size - 1) / 5) {
 
@@ -318,9 +322,6 @@ class MainActivity : AppCompatActivity() {
                             accZ.add(accelerometerData[(baseNumOfAc + (step * i).toInt()) * 3 + 2])
                         }
 
-                        //TODO arrayList에 넣은 64개의 데이터를 파이어베이스에 업로드 하는 코드
-
-
                         baseNumOfAc += numOfAccelerometerData[i]
                     }
                 }
@@ -337,8 +338,6 @@ class MainActivity : AppCompatActivity() {
                             magY.add(magnetometerData[(baseNumOfAc + (step * i).toInt()) * 3 + 1])
                             magZ.add(magnetometerData[(baseNumOfAc + (step * i).toInt()) * 3 + 2])
                         }
-
-                        //TODO arrayList에 넣은 64개의 데이터를 파이어베이스에 업로드 하는 코드
 
                         baseNumOfMa += numOfMagnetometerData[i]
                     }
@@ -357,8 +356,6 @@ class MainActivity : AppCompatActivity() {
                             gyrZ.add(gyroscopeData[(baseNumOfAc + (step * i).toInt()) * 3])
                         }
 
-                        //TODO arrayList에 넣은 64개의 데이터를 파이어베이스에 업로드 하는 코드
-
                         baseNumOfGr += numOfGyroscopeData[i]
                     }
                 }
@@ -372,7 +369,34 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 // 데이터 업로드
-                
+                val totalData = HashMap<String, Any>()
+
+                for (i in 1 .. SECONDS) {
+                    val secondData = HashMap<String, Any>()
+
+                    for (j in 1 .. SAMPLING_RATE) {
+                        val oneOver64HzData = HashMap<String, Any>()
+
+                        oneOver64HzData.put("AccX", accX[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
+                        oneOver64HzData.put("AccY", accY[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
+                        oneOver64HzData.put("AccZ", accZ[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
+
+                        oneOver64HzData.put("MagX", magX[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
+                        oneOver64HzData.put("MagY", magY[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
+                        oneOver64HzData.put("MagZ", magZ[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
+
+                        oneOver64HzData.put("GyrX", gyrX[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
+                        oneOver64HzData.put("GyrY", gyrY[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
+                        oneOver64HzData.put("GyrZ", gyrZ[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
+
+                        secondData.put("data" + j , oneOver64HzData)
+                    }
+
+                    totalData.put(userId + "/sec" + i, secondData)
+                }
+
+                reference.updateChildren(totalData)
+
 
                 button.isClickable = true
             }

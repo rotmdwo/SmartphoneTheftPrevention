@@ -12,7 +12,6 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.*
-import android.util.Log
 import java.text.SimpleDateFormat
 
 class SensorMeasurementService : Service() {
@@ -20,16 +19,18 @@ class SensorMeasurementService : Service() {
     var str = ""
 
     // 시간 설정
-    val minutes: Long = 5
-    val seconds: Long = minutes * 60
-    val delayedTime : Long = 1000 * seconds
+    companion object {
+        val MINUTES: Long = 5
+        val SECONDS: Long = MINUTES * 60
+    }
+    val DELAYED_TIME : Long = 1000 * SECONDS
     var previousTime = 0L
     var elapsedTime = 0L
 
     // 각 초 마다의 수집된 데이터 개수
-    var numOfAccelerometerData = IntArray((seconds + 1).toInt(), {0})
-    var numOfMagnetometerData = IntArray((seconds + 1).toInt(), {0})
-    var numOfGyroscopeData = IntArray((seconds + 1).toInt(), {0})
+    var numOfAccelerometerData = IntArray((SECONDS + 1).toInt(), {0})
+    var numOfMagnetometerData = IntArray((SECONDS + 1).toInt(), {0})
+    var numOfGyroscopeData = IntArray((SECONDS + 1).toInt(), {0})
 
     // 각 센서 데이터. x, y, z 순서로 들어감.
     val accelerometerData = FloatArray(100000, {0.0f})
@@ -113,7 +114,7 @@ class SensorMeasurementService : Service() {
             bundle.putFloatArray("gyroscopeData", gyroscopeData)
             resultReceiver.send(RESULT_CODE, bundle)
 
-        }, delayedTime)
+        }, DELAYED_TIME)
 
         return Service.START_REDELIVER_INTENT
     }
