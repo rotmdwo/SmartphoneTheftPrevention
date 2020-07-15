@@ -49,6 +49,7 @@ class MainActivity : AppCompatActivity() {
     private val obj = object: MyReceiver.Receiver {
         override fun onReceiverResult(resultCode: Int, resultData: Bundle){
             if (resultCode == RESULT_CODE) {
+                // 서비스로부터 데이터 받아옴
                 val accelerometerData = resultData.getFloatArray("accelerometerData")
                 val magnetometerData = resultData.getFloatArray("magnetometerData")
                 val gyroscopeData = resultData.getFloatArray("gyroscopeData")
@@ -60,14 +61,27 @@ class MainActivity : AppCompatActivity() {
                 var isProcessSuccessful = false
 
                 // 데이터 정규화. 5초 마다 구간 설정.
-                isProcessSuccessful = normalizeData(accelerometerData, numOfAccelerometerData, applicationContext)
-                if (!isProcessSuccessful) error("데이터 정규화 오류")
-                isProcessSuccessful = normalizeData(magnetometerData, numOfMagnetometerData, applicationContext)
-                if (!isProcessSuccessful) error("데이터 정규화 오류")
-                isProcessSuccessful = normalizeData(gyroscopeData, numOfGyroscopeData, applicationContext)
-                if (!isProcessSuccessful) error("데이터 정규화 오류")
+                if (accelerometerData != null && numOfAccelerometerData != null) {
+                    isProcessSuccessful = normalizeData(accelerometerData, numOfAccelerometerData, applicationContext)
+                    if (!isProcessSuccessful) error("데이터 정규화 오류")
+                } else {
+                    error("데이터 수집 오류")
+                }
+                if (magnetometerData != null && numOfMagnetometerData != null) {
+                    isProcessSuccessful = normalizeData(magnetometerData, numOfMagnetometerData, applicationContext)
+                    if (!isProcessSuccessful) error("데이터 정규화 오류")
+                } else {
+                    error("데이터 수집 오류")
+                }
+                if (gyroscopeData != null && numOfGyroscopeData != null) {
+                    isProcessSuccessful = normalizeData(gyroscopeData, numOfGyroscopeData, applicationContext)
+                    if (!isProcessSuccessful) error("데이터 정규화 오류")
+                } else {
+                    error("데이터 수집 오류")
+                }
 
 
+                // 파이어베이스에 업로드할 데이터들
                 val accX = ArrayList<Float>(SAMPLING_RATE)
                 val accY = ArrayList<Float>(SAMPLING_RATE)
                 val accZ = ArrayList<Float>(SAMPLING_RATE)
@@ -79,6 +93,7 @@ class MainActivity : AppCompatActivity() {
                 val gyrZ = ArrayList<Float>(SAMPLING_RATE)
 
 
+                // 1초 당 64개의 데이터만 뽑아내 사용
                 sampleData(accelerometerData, numOfAccelerometerData, SAMPLING_RATE,
                     accX, accY, accZ)
                 sampleData(magnetometerData, numOfMagnetometerData, SAMPLING_RATE,
