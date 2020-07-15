@@ -1,4 +1,4 @@
-package edu.skku.cs.autosen
+package edu.skku.cs.autosen.sensor
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -12,6 +12,8 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.*
+import edu.skku.cs.autosen.R
+import edu.skku.cs.autosen.RESULT_CODE
 import java.text.SimpleDateFormat
 
 class SensorMeasurementService : Service() {

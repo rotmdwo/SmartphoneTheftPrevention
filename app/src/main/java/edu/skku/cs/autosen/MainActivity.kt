@@ -5,18 +5,21 @@ import android.os.Bundle
 import android.os.Handler
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.google.firebase.database.FirebaseDatabase
 import kotlinx.android.synthetic.main.activity_main.*
 
-import edu.skku.cs.autosen.SensorMeasurementService.Companion.SECONDS
+import edu.skku.cs.autosen.sensor.SensorMeasurementService.Companion.SECONDS
+import edu.skku.cs.autosen.sensor.MyReceiver
+import edu.skku.cs.autosen.sensor.SensorMeasurementService
+import edu.skku.cs.autosen.utility.checkDataRetrievalIfSuccessful
+import edu.skku.cs.autosen.utility.normalizeData
+import edu.skku.cs.autosen.utility.sampleData
+import edu.skku.cs.autosen.utility.uploadData
 
 const val RESULT_CODE = 101
 
 class MainActivity : AppCompatActivity() {
     private var userId = ""
     private val SAMPLING_RATE: Int = 64
-
-    private val reference = FirebaseDatabase.getInstance().getReference().child("Sensor_Data")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,7 +49,6 @@ class MainActivity : AppCompatActivity() {
     private val obj = object: MyReceiver.Receiver {
         override fun onReceiverResult(resultCode: Int, resultData: Bundle){
             if (resultCode == RESULT_CODE) {
-                //val string = resultData.getString("str")
                 val accelerometerData = resultData.getFloatArray("accelerometerData")
                 val magnetometerData = resultData.getFloatArray("magnetometerData")
                 val gyroscopeData = resultData.getFloatArray("gyroscopeData")
@@ -54,247 +56,17 @@ class MainActivity : AppCompatActivity() {
                 val numOfMagnetometerData = resultData.getIntArray("numOfMagnetometerData")
                 val numOfGyroscopeData = resultData.getIntArray("numOfGyroscopeData")
 
+
+                var isProcessSuccessful = false
+
                 // 데이터 정규화. 5초 마다 구간 설정.
-                for (i in 0 until (numOfAccelerometerData.size - 1) / 5) {
+                isProcessSuccessful = normalizeData(accelerometerData, numOfAccelerometerData, applicationContext)
+                if (!isProcessSuccessful) error("데이터 정규화 오류")
+                isProcessSuccessful = normalizeData(magnetometerData, numOfMagnetometerData, applicationContext)
+                if (!isProcessSuccessful) error("데이터 정규화 오류")
+                isProcessSuccessful = normalizeData(gyroscopeData, numOfGyroscopeData, applicationContext)
+                if (!isProcessSuccessful) error("데이터 정규화 오류")
 
-                    // 기존 구간들의 (X, Y, Z) 세트의 데이터 수
-                    var base = 0
-                    for (k in 0 until i * 5) {
-                        base += numOfAccelerometerData[k]
-                    }
-
-                    // 해당 5초 구간 안에 있는 (X, Y, Z) 세트의 데이터 수
-                    val totalNumOfDataFor5Secs = numOfAccelerometerData[i * 5] + numOfAccelerometerData[i * 5 + 1] +
-                            numOfAccelerometerData[i * 5 + 2] + numOfAccelerometerData[i * 5 + 3] + numOfAccelerometerData[i * 5 + 4]
-
-                    // 해당 5초 구간의 데이터 추출
-                    val arrayListX = ArrayList<Float>(totalNumOfDataFor5Secs)
-                    val arrayListY = ArrayList<Float>(totalNumOfDataFor5Secs)
-                    val arrayListZ = ArrayList<Float>(totalNumOfDataFor5Secs)
-                    for (j in base until base + totalNumOfDataFor5Secs) {
-                        arrayListX.add(accelerometerData[j * 3])
-                        arrayListY.add(accelerometerData[j * 3 + 1])
-                        arrayListZ.add(accelerometerData[j * 3 + 2])
-                    }
-
-                    // 데이터의 Min, Max
-                    val tempMaxX = arrayListX.max()
-                    val tempMinX = arrayListX.min()
-                    val tempMaxY = arrayListY.max()
-                    val tempMinY = arrayListY.min()
-                    val tempMaxZ = arrayListZ.max()
-                    val tempMinZ = arrayListZ.min()
-
-                    val maxX = if (tempMaxX != null) {
-                        tempMaxX
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    val minX = if (tempMinX != null) {
-                        tempMinX
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    val maxY = if (tempMaxY != null) {
-                        tempMaxY
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    val minY = if (tempMinY != null) {
-                        tempMinY
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    val maxZ = if (tempMaxZ != null) {
-                        tempMaxZ
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    val minZ = if (tempMinZ != null) {
-                        tempMinZ
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-
-                    // 구간 길이
-                    val lengthX = maxX - minX
-                    val lengthY = maxY - minY
-                    val lengthZ = maxZ - minZ
-
-                    for (j in base until base + totalNumOfDataFor5Secs) {
-                        accelerometerData[j * 3] = (accelerometerData[j * 3] - minX) / lengthX
-                        accelerometerData[j * 3 + 1] = (accelerometerData[j * 3 + 1] - minY) / lengthY
-                        accelerometerData[j * 3 + 2] = (accelerometerData[j * 3 + 2] - minZ) / lengthZ
-                    }
-                }
-
-                for (i in 0 until (numOfMagnetometerData.size - 1) / 5) {
-
-                    // 기존 구간들의 (X, Y, Z) 데이터 수
-                    var base = 0
-                    for (k in 0 until i * 5) {
-                        base += numOfMagnetometerData[k]
-                    }
-
-                    // 해당 5초 구간 안에 있는 (X, Y, Z) 데이터 수
-                    val totalNumOfDataFor5Secs = numOfMagnetometerData[i * 5] + numOfMagnetometerData[i * 5 + 1] +
-                            numOfMagnetometerData[i * 5 + 2] + numOfMagnetometerData[i * 5 + 3] + numOfMagnetometerData[i * 5 + 4]
-
-                    // 해당 5초 구간의 데이터 추출
-                    val arrayListX = ArrayList<Float>(totalNumOfDataFor5Secs)
-                    val arrayListY = ArrayList<Float>(totalNumOfDataFor5Secs)
-                    val arrayListZ = ArrayList<Float>(totalNumOfDataFor5Secs)
-                    for (j in base until base + totalNumOfDataFor5Secs) {
-                        arrayListX.add(magnetometerData[j * 3])
-                        arrayListY.add(magnetometerData[j * 3 + 1])
-                        arrayListZ.add(magnetometerData[j * 3 + 2])
-                    }
-
-                    // 데이터의 Min, Max
-                    val tempMaxX = arrayListX.max()
-                    val tempMinX = arrayListX.min()
-                    val tempMaxY = arrayListY.max()
-                    val tempMinY = arrayListY.min()
-                    val tempMaxZ = arrayListZ.max()
-                    val tempMinZ = arrayListZ.min()
-
-                    val maxX = if (tempMaxX != null) {
-                        tempMaxX
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    val minX = if (tempMinX != null) {
-                        tempMinX
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    val maxY = if (tempMaxY != null) {
-                        tempMaxY
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    val minY = if (tempMinY != null) {
-                        tempMinY
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    val maxZ = if (tempMaxZ != null) {
-                        tempMaxZ
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    val minZ = if (tempMinZ != null) {
-                        tempMinZ
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-
-                    // 구간 길이
-                    val lengthX = maxX - minX
-                    val lengthY = maxY - minY
-                    val lengthZ = maxZ - minZ
-
-                    for (j in base until base + totalNumOfDataFor5Secs) {
-                        magnetometerData[j * 3] = (magnetometerData[j * 3] - minX) / lengthX
-                        magnetometerData[j * 3 + 1] = (magnetometerData[j * 3 + 1] - minY) / lengthY
-                        magnetometerData[j * 3 + 2] = (magnetometerData[j * 3 + 2] - minZ) / lengthZ
-                    }
-                }
-
-                for (i in 0 until (numOfGyroscopeData.size - 1) / 5) {
-
-                    // 기존 구간들의 (X, Y, Z) 데이터 수
-                    var base = 0
-                    for (k in 0 until i * 5) {
-                        base += numOfGyroscopeData[k]
-                    }
-
-                    // 해당 5초 구간 안에 있는 (X, Y, Z) 데이터 수
-                    val totalNumOfDataFor5Secs = numOfGyroscopeData[i * 5] + numOfGyroscopeData[i * 5 + 1] +
-                            numOfGyroscopeData[i * 5 + 2] + numOfGyroscopeData[i * 5 + 3] + numOfGyroscopeData[i * 5 + 4]
-
-                    // 해당 5초 구간의 데이터 추출
-                    val arrayListX = ArrayList<Float>(totalNumOfDataFor5Secs)
-                    val arrayListY = ArrayList<Float>(totalNumOfDataFor5Secs)
-                    val arrayListZ = ArrayList<Float>(totalNumOfDataFor5Secs)
-                    for (j in base until base + totalNumOfDataFor5Secs) {
-                        arrayListX.add(gyroscopeData[j * 3])
-                        arrayListY.add(gyroscopeData[j * 3 + 1])
-                        arrayListZ.add(gyroscopeData[j * 3 + 2])
-                    }
-
-                    // 데이터의 Min, Max
-                    val tempMaxX = arrayListX.max()
-                    val tempMinX = arrayListX.min()
-                    val tempMaxY = arrayListY.max()
-                    val tempMinY = arrayListY.min()
-                    val tempMaxZ = arrayListZ.max()
-                    val tempMinZ = arrayListZ.min()
-
-                    val maxX = if (tempMaxX != null) {
-                        tempMaxX
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    val minX = if (tempMinX != null) {
-                        tempMinX
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    val maxY = if (tempMaxY != null) {
-                        tempMaxY
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    val minY = if (tempMinY != null) {
-                        tempMinY
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    val maxZ = if (tempMaxZ != null) {
-                        tempMaxZ
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    val minZ = if (tempMinZ != null) {
-                        tempMinZ
-                    } else {
-                        Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다.", Toast.LENGTH_LONG).show()
-                        return
-                    }
-
-                    // 구간 길이
-                    val lengthX = maxX - minX
-                    val lengthY = maxY - minY
-                    val lengthZ = maxZ - minZ
-
-                    for (j in base until base + totalNumOfDataFor5Secs) {
-                        gyroscopeData[j * 3] = (gyroscopeData[j * 3] - minX) / lengthX
-                        gyroscopeData[j * 3 + 1] = (gyroscopeData[j * 3 + 1] - minY) / lengthY
-                        gyroscopeData[j * 3 + 2] = (gyroscopeData[j * 3 + 2] - minZ) / lengthZ
-                    }
-                }
-
-                var baseNumOfAc = 0
-                var baseNumOfMa = 0
-                var baseNumOfGr = 0
 
                 val accX = ArrayList<Float>(SAMPLING_RATE)
                 val accY = ArrayList<Float>(SAMPLING_RATE)
@@ -306,111 +78,26 @@ class MainActivity : AppCompatActivity() {
                 val gyrY = ArrayList<Float>(SAMPLING_RATE)
                 val gyrZ = ArrayList<Float>(SAMPLING_RATE)
 
-                for (i in 0 until numOfAccelerometerData.size - 1) {
-                    if (numOfAccelerometerData[i] < SAMPLING_RATE) { // 데이터 수집이 제대로 안 된 경우
-                        baseNumOfAc += numOfAccelerometerData[i]
-                        continue
-                    } else { // 데이터 수집이 제대로 된 경우
 
-                        val step: Float = numOfAccelerometerData[i].toFloat() / SAMPLING_RATE
+                sampleData(accelerometerData, numOfAccelerometerData, SAMPLING_RATE,
+                    accX, accY, accZ)
+                sampleData(magnetometerData, numOfMagnetometerData, SAMPLING_RATE,
+                    magX, magY, magZ)
+                sampleData(gyroscopeData, numOfGyroscopeData, SAMPLING_RATE,
+                    gyrX, gyrY, gyrZ)
 
-                        for (j in 0 until SAMPLING_RATE) {
-                            accX.add(accelerometerData[(baseNumOfAc + (step * i).toInt()) * 3])
-                            accY.add(accelerometerData[(baseNumOfAc + (step * i).toInt()) * 3 + 1])
-                            accZ.add(accelerometerData[(baseNumOfAc + (step * i).toInt()) * 3 + 2])
-                        }
-
-                        baseNumOfAc += numOfAccelerometerData[i]
-                    }
-                }
-                for (i in 0 until numOfMagnetometerData.size - 1) {
-                    if (numOfMagnetometerData[i] < SAMPLING_RATE) { // 데이터 수집이 제대로 안 된 경우
-                        baseNumOfMa += numOfMagnetometerData[i]
-                        continue
-                    } else { // 데이터 수집이 제대로 된 경우
-
-                        val step: Float = numOfMagnetometerData[i].toFloat() / SAMPLING_RATE
-
-                        for (j in 0 until SAMPLING_RATE) {
-                            magX.add(magnetometerData[(baseNumOfMa + (step * i).toInt()) * 3])
-                            magY.add(magnetometerData[(baseNumOfMa + (step * i).toInt()) * 3 + 1])
-                            magZ.add(magnetometerData[(baseNumOfMa + (step * i).toInt()) * 3 + 2])
-                        }
-
-                        baseNumOfMa += numOfMagnetometerData[i]
-                    }
-                }
-                for (i in 0 until numOfGyroscopeData.size - 1) {
-                    if (numOfGyroscopeData[i] < SAMPLING_RATE) { // 데이터 수집이 제대로 안 된 경우
-                        baseNumOfGr += numOfGyroscopeData[i]
-                        continue
-                    } else { // 데이터 수집이 제대로 된 경우
-
-                        val step: Float = numOfGyroscopeData[i].toFloat() / SAMPLING_RATE
-
-                        for (j in 0 until SAMPLING_RATE) {
-                            gyrX.add(gyroscopeData[(baseNumOfGr + (step * i).toInt()) * 3])
-                            gyrY.add(gyroscopeData[(baseNumOfGr + (step * i).toInt()) * 3])
-                            gyrZ.add(gyroscopeData[(baseNumOfGr + (step * i).toInt()) * 3])
-                        }
-
-                        baseNumOfGr += numOfGyroscopeData[i]
-                    }
-                }
 
                 // 데이터가 제대로 수집 되었는 지 확인
-                val retrievedNum = accX.size
-                if (accY.size != retrievedNum || accZ.size != retrievedNum || magX.size != retrievedNum || magY.size != retrievedNum ||
-                    magZ.size != retrievedNum || gyrX.size != retrievedNum || gyrY.size != retrievedNum || gyrZ.size != retrievedNum) {
-                    Toast.makeText(applicationContext, "데이터 처리 중에 문제가 발생하였습니다. (수집오류)", Toast.LENGTH_LONG).show()
-                    return
-                }
+                isProcessSuccessful = checkDataRetrievalIfSuccessful(accX, accY, accZ, magX, magY, magZ, gyrX, gyrY, gyrZ, applicationContext)
+                if (!isProcessSuccessful) error("데이터 수집 오류")
+
 
                 // 데이터 업로드
-                val totalData = HashMap<String, Any>()
-
-                for (i in 1 .. SECONDS) {
-                    val secondData = HashMap<String, Any>()
-
-                    for (j in 1 .. SAMPLING_RATE) {
-                        val oneOver64HzData = HashMap<String, Any>()
-
-                        oneOver64HzData.put("AccX", accX[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
-                        oneOver64HzData.put("AccY", accY[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
-                        oneOver64HzData.put("AccZ", accZ[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
-
-                        oneOver64HzData.put("MagX", magX[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
-                        oneOver64HzData.put("MagY", magY[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
-                        oneOver64HzData.put("MagZ", magZ[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
-
-                        oneOver64HzData.put("GyrX", gyrX[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
-                        oneOver64HzData.put("GyrY", gyrY[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
-                        oneOver64HzData.put("GyrZ", gyrZ[((i - 1) * SAMPLING_RATE + (j - 1)).toInt()])
-
-                        secondData.put("data" + j , oneOver64HzData)
-                    }
-
-                    totalData.put(userId + "/sec" + i, secondData)
-                }
-
-                reference.updateChildren(totalData)
+                uploadData(SAMPLING_RATE, accX, accY, accZ, magX, magY, magZ, gyrX, gyrY, gyrZ, userId)
 
 
                 button.isClickable = true
             }
         }
     }
-    /*
-    override fun onNewIntent(intent: Intent) {
-        processIntent(intent)
-        super.onNewIntent(intent)
-    }
-
-    fun processIntent(intent: Intent) {
-        if (intent != null) {
-            textView.text = intent.getStringExtra("string")
-            button.isClickable = true
-        }
-    }
-    */
 }

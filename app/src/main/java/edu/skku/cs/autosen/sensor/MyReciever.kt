@@ -1,4 +1,4 @@
-package edu.skku.cs.autosen
+package edu.skku.cs.autosen.sensor
 
 import android.os.Bundle
 import android.os.Handler

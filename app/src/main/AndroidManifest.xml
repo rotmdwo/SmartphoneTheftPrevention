@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <service
-            android:name=".SensorMeasurementService"
+            android:name=".sensor.SensorMeasurementService"
             android:enabled="true"
             android:exported="true"></service>
 
