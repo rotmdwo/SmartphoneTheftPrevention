@@ -7,13 +7,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 
-import edu.skku.cs.autosen.sensor.SensorMeasurementService.Companion.SECONDS
 import edu.skku.cs.autosen.sensor.MyReceiver
 import edu.skku.cs.autosen.sensor.SensorMeasurementService
-import edu.skku.cs.autosen.utility.checkDataRetrievalIfSuccessful
-import edu.skku.cs.autosen.utility.normalizeData
-import edu.skku.cs.autosen.utility.sampleData
-import edu.skku.cs.autosen.utility.uploadData
+import edu.skku.cs.autosen.utility.*
 
 const val RESULT_CODE = 101
 
@@ -33,6 +29,15 @@ class MainActivity : AppCompatActivity() {
             button.isClickable = false
 
             userId = ID.text.toString()
+
+            var isDuplicated = false
+            isDuplicated = checkIdIfDuplicated(userId, applicationContext)
+
+            if (isDuplicated) {
+                button.isClickable = true
+                return@setOnClickListener
+            }
+
 
             if (userId.equals("")) {
                 Toast.makeText(applicationContext, "ID를 입력해주세요.", Toast.LENGTH_SHORT).show()
