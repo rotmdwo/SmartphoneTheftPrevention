@@ -3,11 +3,7 @@ package edu.skku.cs.autosen.utility
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
-import edu.skku.cs.autosen.MainActivity
+import com.google.firebase.database.*
 import edu.skku.cs.autosen.sensor.SensorMeasurementService
 
 fun normalizeData(data: FloatArray, numOfData: IntArray, context: Context): Boolean {
@@ -201,6 +197,26 @@ fun checkIdIfDuplicated(userId: String, context: Context): Boolean {
     }
 
     return isDuplicated
+}
+
+fun removeDatabaseItem(name1: String, name2: String? = null, name3: String? = null, name4: String? = null) {
+    var reference: DatabaseReference
+
+    if (name4 != null && name3 != null && name2 != null) {
+        reference = FirebaseDatabase.getInstance().reference.child(name1).child(name2).child(name3).child(name4)
+    } else {
+        if (name3 != null && name2 != null) {
+            reference = FirebaseDatabase.getInstance().reference.child(name1).child(name2).child(name3)
+        } else {
+            if (name2 != null) {
+                reference = FirebaseDatabase.getInstance().reference.child(name1).child(name2)
+            } else {
+                reference = FirebaseDatabase.getInstance().reference.child(name1)
+            }
+        }
+    }
+
+    reference?.ref.removeValue()
 }
 
 class Utility {

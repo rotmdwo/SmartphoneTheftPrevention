@@ -22,7 +22,7 @@ class SensorMeasurementService : Service() {
 
     // 시간 설정
     companion object {
-        val MINUTES: Long = 10
+        val MINUTES: Long = 15
         val SECONDS: Long = MINUTES * 60
     }
     val DELAYED_TIME : Long = 1000 * SECONDS
