@@ -1,6 +1,7 @@
 package edu.skku.cs.autosen.utility
 
 import android.content.Context
+import android.os.Handler
 import android.util.Log
 import android.widget.Toast
 import com.google.firebase.database.*
@@ -156,47 +157,6 @@ fun uploadData(samplingRate: Int, accX: ArrayList<Float>, accY: ArrayList<Float>
 
     val reference = FirebaseDatabase.getInstance().getReference().child("Sensor_Data")
     reference.updateChildren(totalData)
-}
-
-fun checkIdIfDuplicated(userId: String, context: Context): Boolean {
-    var isDuplicated = false
-    var isThreadDone = false
-
-    val reference = FirebaseDatabase.getInstance().getReference().child("Users")
-    val query = reference.orderByKey()
-    val singleValueEventListener = object : ValueEventListener {
-        override fun onCancelled(error: DatabaseError) {
-            Log.e("asdf", "checkIdIfDuplicated 메서드 오류")
-            Toast.makeText(context, "인터넷 연결 오류", Toast.LENGTH_LONG).show()
-            isThreadDone = true
-            isDuplicated = true
-        }
-
-        override fun onDataChange(snapshot: DataSnapshot) {
-            val userIds = snapshot.children
-
-            for (i in userIds) {
-                val id = i.key
-
-                if (userId.equals(id)) {
-                    Toast.makeText(context, "이미 데이터가 등록되어 있습니다.", Toast.LENGTH_LONG).show()
-                    isDuplicated = true
-                    isThreadDone = true
-                    return
-                }
-            }
-
-            isThreadDone = true
-        }
-
-    }
-    query.addListenerForSingleValueEvent(singleValueEventListener)
-
-    while (!isThreadDone) {
-        Thread.sleep(50)
-    }
-
-    return isDuplicated
 }
 
 fun removeDatabaseItem(name1: String, name2: String? = null, name3: String? = null, name4: String? = null) {

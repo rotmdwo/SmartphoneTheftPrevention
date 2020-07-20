@@ -3,8 +3,13 @@ package edu.skku.cs.autosen
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import kotlinx.android.synthetic.main.activity_main.*
 
 import edu.skku.cs.autosen.sensor.MyReceiver
@@ -30,23 +35,42 @@ class MainActivity : AppCompatActivity() {
 
             userId = ID.text.toString()
 
-            var isDuplicated = false
-            isDuplicated = checkIdIfDuplicated(userId, applicationContext)
-
-            if (isDuplicated) {
-                button.isClickable = true
-                return@setOnClickListener
-            }
-
-
             if (userId.equals("")) {
                 Toast.makeText(applicationContext, "ID를 입력해주세요.", Toast.LENGTH_SHORT).show()
                 button.isClickable = true
             } else {
-                // Start Service
-                val intent = Intent(applicationContext, SensorMeasurementService::class.java)
-                intent.putExtra("receiver",receiver )
-                startService(intent)
+                val reference = FirebaseDatabase.getInstance().getReference().child("Users")
+                val query = reference.orderByKey()
+                val singleValueEventListener = object : ValueEventListener {
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e("asdf", "checkIdIfDuplicated 메서드 오류")
+                        Toast.makeText(applicationContext, "인터넷 연결 오류", Toast.LENGTH_LONG).show()
+                        button.isClickable = true
+                    }
+
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val userIds = snapshot.children
+
+                        for (i in userIds) {
+                            val id = i.key
+
+                            if (userId.equals(id)) {
+                                Toast.makeText(applicationContext, "이미 데이터가 등록되어 있습니다.", Toast.LENGTH_LONG).show()
+                                button.isClickable = true
+
+                                return
+                            }
+                        }
+
+                        // Start Service
+                        val intent = Intent(applicationContext, SensorMeasurementService::class.java)
+                        intent.putExtra("receiver",receiver )
+                        startService(intent)
+                    }
+
+                }
+
+                query.addListenerForSingleValueEvent(singleValueEventListener)
             }
         }
     }
