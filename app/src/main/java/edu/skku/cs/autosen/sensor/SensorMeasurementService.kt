@@ -12,6 +12,7 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.*
+import android.widget.Toast
 import edu.skku.cs.autosen.R
 import edu.skku.cs.autosen.RESULT_CODE
 import java.text.SimpleDateFormat
@@ -22,7 +23,7 @@ class SensorMeasurementService : Service() {
 
     // 시간 설정
     companion object {
-        val MINUTES: Long = 15
+        val MINUTES: Long = 20
         val SECONDS: Long = MINUTES * 60
     }
     val DELAYED_TIME : Long = 1000 * SECONDS
@@ -34,10 +35,16 @@ class SensorMeasurementService : Service() {
     var numOfMagnetometerData = IntArray((SECONDS + 1).toInt(), {0})
     var numOfGyroscopeData = IntArray((SECONDS + 1).toInt(), {0})
 
+    // 센서 마다의 수집된 전체 데이터 개수
+    var numOfAllAccelerometerData = 0
+    var numOfAllMagnetometerData = 0
+    var numOfAllGyroscopeData = 0
+
     // 각 센서 데이터. x, y, z 순서로 들어감.
-    val accelerometerData = FloatArray(100000, {0.0f})
-    val magnetometerData = FloatArray(100000, {0.0f})
-    val gyroscopeData = FloatArray(100000, {0.0f})
+    val DATA_ARRAY_SIZE = 100 * 3 * (SECONDS.toInt() + 60)
+    val accelerometerData = FloatArray(DATA_ARRAY_SIZE, {0.0f})
+    val magnetometerData = FloatArray(DATA_ARRAY_SIZE, {0.0f})
+    val gyroscopeData = FloatArray(DATA_ARRAY_SIZE, {0.0f})
 
     val ANDROID_CHANNNEL_ID = "edu.skku.cs.autosen"
     val NOTIFICATION_ID = 5534
@@ -116,6 +123,8 @@ class SensorMeasurementService : Service() {
             bundle.putFloatArray("gyroscopeData", gyroscopeData)
             resultReceiver.send(RESULT_CODE, bundle)
 
+            Toast.makeText(this, "Successfully Retrieved Data", Toast.LENGTH_SHORT).show()
+
         }, DELAYED_TIME)
 
         return Service.START_REDELIVER_INTENT
@@ -137,6 +146,7 @@ class SensorMeasurementService : Service() {
                 //str += "${timeFormat.format(System.currentTimeMillis())} accX: ${p0!!.values[0]} accY: ${p0!!.values[1]} accZ: ${p0!!.values[2]}\n"
                 elapsedTime = System.currentTimeMillis() - previousTime
                 val index = (elapsedTime / 1000).toInt()
+                /*
                 var base = 0
                 for (i in 0..index) {
                     base += numOfAccelerometerData[i]
@@ -144,6 +154,15 @@ class SensorMeasurementService : Service() {
                 accelerometerData[base * 3 + 0] = p0.values[0]
                 accelerometerData[base * 3 + 1] = p0.values[1]
                 accelerometerData[base * 3 + 2] = p0.values[2]
+                numOfAccelerometerData[index]++
+
+                 */
+
+
+                accelerometerData[numOfAllAccelerometerData * 3 + 0] = p0.values[0]
+                accelerometerData[numOfAllAccelerometerData * 3 + 1] = p0.values[1]
+                accelerometerData[numOfAllAccelerometerData * 3 + 2] = p0.values[2]
+                numOfAllAccelerometerData++
                 numOfAccelerometerData[index]++
 
                 //Log.d("asdf","collecting: " + p0.values[0])
@@ -163,6 +182,7 @@ class SensorMeasurementService : Service() {
                 //str += "${timeFormat.format(System.currentTimeMillis())} gyroX: ${p0!!.values[0]} gyroY: ${p0!!.values[1]} gyroZ: ${p0!!.values[2]}\n"
                 elapsedTime = System.currentTimeMillis() - previousTime
                 val index = (elapsedTime / 1000).toInt()
+                /*
                 var base = 0
                 for (i in 0..index) {
                     base += numOfGyroscopeData[i]
@@ -171,6 +191,16 @@ class SensorMeasurementService : Service() {
                 gyroscopeData[base * 3 + 1] = p0.values[1]
                 gyroscopeData[base * 3 + 2] = p0.values[2]
                 numOfGyroscopeData[index]++
+
+                 */
+
+
+                gyroscopeData[numOfAllGyroscopeData * 3 + 0] = p0.values[0]
+                gyroscopeData[numOfAllGyroscopeData * 3 + 1] = p0.values[1]
+                gyroscopeData[numOfAllGyroscopeData * 3 + 2] = p0.values[2]
+                numOfAllGyroscopeData++
+                numOfGyroscopeData[index]++
+
             }
         }
     }
@@ -187,6 +217,7 @@ class SensorMeasurementService : Service() {
                 //str += "${timeFormat.format(System.currentTimeMillis())} magX: ${p0!!.values[0]} magY: ${p0!!.values[1]} magZ: ${p0!!.values[2]}\n"
                 elapsedTime = System.currentTimeMillis() - previousTime
                 val index = (elapsedTime / 1000).toInt()
+                /*
                 var base = 0
                 for (i in 0..index) {
                     base += numOfMagnetometerData[i]
@@ -195,6 +226,16 @@ class SensorMeasurementService : Service() {
                 magnetometerData[base * 3 + 1] = p0.values[1]
                 magnetometerData[base * 3 + 2] = p0.values[2]
                 numOfMagnetometerData[index]++
+
+                 */
+
+
+                magnetometerData[numOfAllMagnetometerData * 3 + 0] = p0.values[0]
+                magnetometerData[numOfAllMagnetometerData * 3 + 1] = p0.values[1]
+                magnetometerData[numOfAllMagnetometerData * 3 + 2] = p0.values[2]
+                numOfAllMagnetometerData++
+                numOfMagnetometerData[index]++
+
             }
         }
     }

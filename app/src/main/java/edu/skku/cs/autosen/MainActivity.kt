@@ -15,6 +15,8 @@ import kotlinx.android.synthetic.main.activity_main.*
 import edu.skku.cs.autosen.sensor.MyReceiver
 import edu.skku.cs.autosen.sensor.SensorMeasurementService
 import edu.skku.cs.autosen.utility.*
+import java.util.*
+import kotlin.collections.ArrayList
 
 const val RESULT_CODE = 101
 
@@ -22,10 +24,20 @@ class MainActivity : AppCompatActivity() {
     private var userId = ""
     private val SAMPLING_RATE: Int = 64
 
+    private var LANGUAGE = "KOREAN"
+
+    private val possibleTestIdSet = hashSetOf("sungjae","heidi","chettem","wiu",
+    "seongjeong","yeongho", "yeongho_family1", "yeongho_family2","jinsol", "jinsol_family1",
+        "jinsol_family2", "hanjoon", "kan", "chanhee", "yewon")
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        if (Locale.getDefault().language != "ko") {
+            LANGUAGE = "OTHERS"
+            button.text = "Start"
+        }
 
         val receiver = MyReceiver(Handler())
         receiver.setReceiver(obj)
@@ -36,7 +48,14 @@ class MainActivity : AppCompatActivity() {
             userId = ID.text.toString()
 
             if (userId.equals("")) {
-                Toast.makeText(applicationContext, "ID를 입력해주세요.", Toast.LENGTH_SHORT).show()
+                if (LANGUAGE == "KOREAN")
+                    Toast.makeText(applicationContext, "ID를 입력해주세요.", Toast.LENGTH_SHORT).show()
+                else Toast.makeText(applicationContext, "Please enter ID.", Toast.LENGTH_SHORT).show()
+                button.isClickable = true
+            } else if (!possibleTestIdSet.contains(userId)) {
+                if (LANGUAGE == "KOREAN")
+                    Toast.makeText(applicationContext, "허가되지 않은 ID입니다.", Toast.LENGTH_SHORT).show()
+                else Toast.makeText(applicationContext, "Not Allowed ID", Toast.LENGTH_SHORT).show()
                 button.isClickable = true
             } else {
                 val reference = FirebaseDatabase.getInstance().getReference().child("Users")
@@ -44,7 +63,9 @@ class MainActivity : AppCompatActivity() {
                 val singleValueEventListener = object : ValueEventListener {
                     override fun onCancelled(error: DatabaseError) {
                         Log.e("asdf", "checkIdIfDuplicated 메서드 오류")
-                        Toast.makeText(applicationContext, "인터넷 연결 오류", Toast.LENGTH_LONG).show()
+                        if (LANGUAGE == "KOREAN")
+                            Toast.makeText(applicationContext, "인터넷 연결 오류", Toast.LENGTH_LONG).show()
+                        else Toast.makeText(applicationContext, "Internet Access Error", Toast.LENGTH_LONG).show()
                         button.isClickable = true
                     }
 
@@ -55,7 +76,9 @@ class MainActivity : AppCompatActivity() {
                             val id = i.key
 
                             if (userId.equals(id)) {
-                                Toast.makeText(applicationContext, "이미 데이터가 등록되어 있습니다.", Toast.LENGTH_LONG).show()
+                                if (LANGUAGE == "KOREAN")
+                                    Toast.makeText(applicationContext, "이미 데이터가 등록되어 있습니다.", Toast.LENGTH_LONG).show()
+                                else Toast.makeText(applicationContext, "Data is already registered with your ID", Toast.LENGTH_LONG).show()
                                 button.isClickable = true
 
                                 return
