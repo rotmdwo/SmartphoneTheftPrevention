@@ -12,9 +12,15 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.*
+import android.util.Log
 import android.widget.Toast
+import edu.skku.cs.autosen.MainActivity.Companion.userId
 import edu.skku.cs.autosen.R
 import edu.skku.cs.autosen.RESULT_CODE
+import edu.skku.cs.autosen.utility.checkDataRetrievalIfSuccessful
+import edu.skku.cs.autosen.utility.normalizeData
+import edu.skku.cs.autosen.utility.sampleData
+import edu.skku.cs.autosen.utility.uploadData
 import java.text.SimpleDateFormat
 
 class SensorMeasurementService : Service() {
@@ -23,7 +29,7 @@ class SensorMeasurementService : Service() {
 
     // 시간 설정
     companion object {
-        val MINUTES: Long = 20
+        val MINUTES: Long = 15
         val SECONDS: Long = MINUTES * 60
     }
     val DELAYED_TIME : Long = 1000 * SECONDS
@@ -48,6 +54,7 @@ class SensorMeasurementService : Service() {
 
     val ANDROID_CHANNNEL_ID = "edu.skku.cs.autosen"
     val NOTIFICATION_ID = 5534
+    private val SAMPLING_RATE: Int = 64
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // For foreground service
@@ -115,6 +122,7 @@ class SensorMeasurementService : Service() {
             //bundle.putInt("numOfAccelerometerData", numOfAccelerometerData)
             //bundle.putInt("numOfMagnetometerData", numOfMagnetometerData)
             //bundle.putInt("numOfGyroscopeData", numOfGyroscopeData)
+            /*
             bundle.putIntArray("numOfAccelerometerData", numOfAccelerometerData)
             bundle.putIntArray("numOfMagnetometerData", numOfMagnetometerData)
             bundle.putIntArray("numOfGyroscopeData", numOfGyroscopeData)
@@ -123,7 +131,63 @@ class SensorMeasurementService : Service() {
             bundle.putFloatArray("gyroscopeData", gyroscopeData)
             resultReceiver.send(RESULT_CODE, bundle)
 
+             */
+
             Toast.makeText(this, "Successfully Retrieved Data", Toast.LENGTH_SHORT).show()
+
+            var isProcessSuccessful = false
+
+            // 데이터 정규화. 5초 마다 구간 설정.
+            if (accelerometerData != null && numOfAccelerometerData != null) {
+                isProcessSuccessful = normalizeData(accelerometerData, numOfAccelerometerData, applicationContext)
+                if (!isProcessSuccessful) error("데이터 정규화 오류")
+            } else {
+                error("데이터 수집 오류")
+            }
+            if (magnetometerData != null && numOfMagnetometerData != null) {
+                isProcessSuccessful = normalizeData(magnetometerData, numOfMagnetometerData, applicationContext)
+                if (!isProcessSuccessful) error("데이터 정규화 오류")
+            } else {
+                error("데이터 수집 오류")
+            }
+            if (gyroscopeData != null && numOfGyroscopeData != null) {
+                isProcessSuccessful = normalizeData(gyroscopeData, numOfGyroscopeData, applicationContext)
+                if (!isProcessSuccessful) error("데이터 정규화 오류")
+            } else {
+                error("데이터 수집 오류")
+            }
+
+
+            // 파이어베이스에 업로드할 데이터들
+            val accX = ArrayList<Float>(SAMPLING_RATE)
+            val accY = ArrayList<Float>(SAMPLING_RATE)
+            val accZ = ArrayList<Float>(SAMPLING_RATE)
+            val magX = ArrayList<Float>(SAMPLING_RATE)
+            val magY = ArrayList<Float>(SAMPLING_RATE)
+            val magZ = ArrayList<Float>(SAMPLING_RATE)
+            val gyrX = ArrayList<Float>(SAMPLING_RATE)
+            val gyrY = ArrayList<Float>(SAMPLING_RATE)
+            val gyrZ = ArrayList<Float>(SAMPLING_RATE)
+
+
+            // 1초 당 64개의 데이터만 뽑아내 사용
+            sampleData(accelerometerData, numOfAccelerometerData, SAMPLING_RATE,
+                accX, accY, accZ)
+            sampleData(magnetometerData, numOfMagnetometerData, SAMPLING_RATE,
+                magX, magY, magZ)
+            sampleData(gyroscopeData, numOfGyroscopeData, SAMPLING_RATE,
+                gyrX, gyrY, gyrZ)
+
+
+            // 데이터가 제대로 수집 되었는 지 확인
+            isProcessSuccessful = checkDataRetrievalIfSuccessful(accX, accY, accZ, magX, magY, magZ, gyrX, gyrY, gyrZ, applicationContext)
+            if (!isProcessSuccessful) error("데이터 수집 오류")
+
+
+            // 데이터 업로드
+            uploadData(SAMPLING_RATE, accX, accY, accZ, magX, magY, magZ, gyrX, gyrY, gyrZ, userId)
+
+            resultReceiver.send(RESULT_CODE, bundle)
 
         }, DELAYED_TIME)
 
@@ -157,7 +221,6 @@ class SensorMeasurementService : Service() {
                 numOfAccelerometerData[index]++
 
                  */
-
 
                 accelerometerData[numOfAllAccelerometerData * 3 + 0] = p0.values[0]
                 accelerometerData[numOfAllAccelerometerData * 3 + 1] = p0.values[1]

@@ -21,14 +21,17 @@ import kotlin.collections.ArrayList
 const val RESULT_CODE = 101
 
 class MainActivity : AppCompatActivity() {
-    private var userId = ""
-    private val SAMPLING_RATE: Int = 64
+    //private var userId = ""
+    //private val SAMPLING_RATE: Int = 64
 
-    private var LANGUAGE = "KOREAN"
+    companion object {
+        var LANGUAGE = "KOREAN"
+        var userId = ""
+    }
 
     private val possibleTestIdSet = hashSetOf("sungjae","heidi","chettem","wiu",
     "seongjeong","yeongho", "yeongho_family1", "yeongho_family2","jinsol", "jinsol_family1",
-        "jinsol_family2", "hanjoon", "kan", "chanhee", "yewon")
+        "jinsol_family2", "hanjoon", "kan", "chanhee", "yewon", "test1Min13")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,6 +104,7 @@ class MainActivity : AppCompatActivity() {
     private val obj = object: MyReceiver.Receiver {
         override fun onReceiverResult(resultCode: Int, resultData: Bundle){
             if (resultCode == RESULT_CODE) {
+                /*
                 // 서비스로부터 데이터 받아옴
                 val accelerometerData = resultData.getFloatArray("accelerometerData")
                 val magnetometerData = resultData.getFloatArray("magnetometerData")
@@ -162,6 +166,8 @@ class MainActivity : AppCompatActivity() {
                 // 데이터 업로드
                 uploadData(SAMPLING_RATE, accX, accY, accZ, magX, magY, magZ, gyrX, gyrY, gyrZ, userId)
 
+
+                 */
 
                 button.isClickable = true
             }

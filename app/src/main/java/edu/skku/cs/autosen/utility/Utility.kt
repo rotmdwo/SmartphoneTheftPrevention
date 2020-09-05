@@ -93,11 +93,34 @@ fun normalizeData(data: FloatArray, numOfData: IntArray, context: Context): Bool
 fun sampleData(fullData: FloatArray, numOfData: IntArray, samplingRate: Int,
     dataX: ArrayList<Float>, dataY: ArrayList<Float>, dataZ: ArrayList<Float>) {
     var baseNum = 0
+    var lastSuccessfulRetrieval = 0
 
     for (i in 0 until numOfData.size - 1) {
         if (numOfData[i] < samplingRate) { // 데이터 수집이 제대로 안 된 경우
+            if (i == 0) { // 가장 처음부터 데이터 수집이 안 되었다면 가장 미래에 수집인 잘 된 데이터 가져옴
+                var futureSuccessfulRetrieval = 1
+                var tempBaseNum = numOfData[0]
+                while (numOfData[futureSuccessfulRetrieval] < samplingRate) {
+                    tempBaseNum += numOfData[futureSuccessfulRetrieval]
+                    futureSuccessfulRetrieval++
+                }
+
+                val step: Float = numOfData[futureSuccessfulRetrieval].toFloat() / samplingRate
+
+                for (j in 0 until samplingRate) {
+                    dataX.add(fullData[(tempBaseNum + (step * i).toInt()) * 3])
+                    dataY.add(fullData[(tempBaseNum + (step * i).toInt()) * 3 + 1])
+                    dataZ.add(fullData[(tempBaseNum + (step * i).toInt()) * 3 + 2])
+                }
+            } else { // 가장 최근에 데이터 수집이 잘 된 데이터 복사
+                for (j in 0 until samplingRate) {
+                    dataX.add(dataX[lastSuccessfulRetrieval * samplingRate + j])
+                    dataY.add(dataX[lastSuccessfulRetrieval * samplingRate + j])
+                    dataZ.add(dataX[lastSuccessfulRetrieval * samplingRate + j])
+                }
+            }
+
             baseNum += numOfData[i]
-            continue
         } else { // 데이터 수집이 제대로 된 경우
 
             val step: Float = numOfData[i].toFloat() / samplingRate
@@ -109,6 +132,7 @@ fun sampleData(fullData: FloatArray, numOfData: IntArray, samplingRate: Int,
             }
 
             baseNum += numOfData[i]
+            lastSuccessfulRetrieval = i
         }
     }
 }
@@ -155,8 +179,13 @@ fun uploadData(samplingRate: Int, accX: ArrayList<Float>, accY: ArrayList<Float>
         totalData.put(userId + "/sec" + i, secondData)
     }
 
-    val reference = FirebaseDatabase.getInstance().getReference().child("Sensor_Data")
+    var reference = FirebaseDatabase.getInstance().getReference().child("Sensor_Data")
     reference.updateChildren(totalData)
+
+    val idData = HashMap<String, Any>()
+    idData.put(userId, userId)
+    reference = FirebaseDatabase.getInstance().getReference().child("Users")
+    reference.updateChildren(idData)
 }
 
 fun removeDatabaseItem(name1: String, name2: String? = null, name3: String? = null, name4: String? = null) {
