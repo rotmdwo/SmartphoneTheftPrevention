@@ -108,15 +108,15 @@ fun sampleData(fullData: FloatArray, numOfData: IntArray, samplingRate: Int,
                 val step: Float = numOfData[futureSuccessfulRetrieval].toFloat() / samplingRate
 
                 for (j in 0 until samplingRate) {
-                    dataX.add(fullData[(tempBaseNum + (step * i).toInt()) * 3])
-                    dataY.add(fullData[(tempBaseNum + (step * i).toInt()) * 3 + 1])
-                    dataZ.add(fullData[(tempBaseNum + (step * i).toInt()) * 3 + 2])
+                    dataX.add(fullData[(tempBaseNum + (step * j).toInt()) * 3])
+                    dataY.add(fullData[(tempBaseNum + (step * j).toInt()) * 3 + 1])
+                    dataZ.add(fullData[(tempBaseNum + (step * j).toInt()) * 3 + 2])
                 }
             } else { // 가장 최근에 데이터 수집이 잘 된 데이터 복사
                 for (j in 0 until samplingRate) {
                     dataX.add(dataX[lastSuccessfulRetrieval * samplingRate + j])
-                    dataY.add(dataX[lastSuccessfulRetrieval * samplingRate + j])
-                    dataZ.add(dataX[lastSuccessfulRetrieval * samplingRate + j])
+                    dataY.add(dataY[lastSuccessfulRetrieval * samplingRate + j])
+                    dataZ.add(dataZ[lastSuccessfulRetrieval * samplingRate + j])
                 }
             }
 
@@ -126,9 +126,9 @@ fun sampleData(fullData: FloatArray, numOfData: IntArray, samplingRate: Int,
             val step: Float = numOfData[i].toFloat() / samplingRate
 
             for (j in 0 until samplingRate) {
-                dataX.add(fullData[(baseNum + (step * i).toInt()) * 3])
-                dataY.add(fullData[(baseNum + (step * i).toInt()) * 3 + 1])
-                dataZ.add(fullData[(baseNum + (step * i).toInt()) * 3 + 2])
+                dataX.add(fullData[(baseNum + (step * j).toInt()) * 3])
+                dataY.add(fullData[(baseNum + (step * j).toInt()) * 3 + 1])
+                dataZ.add(fullData[(baseNum + (step * j).toInt()) * 3 + 2])
             }
 
             baseNum += numOfData[i]

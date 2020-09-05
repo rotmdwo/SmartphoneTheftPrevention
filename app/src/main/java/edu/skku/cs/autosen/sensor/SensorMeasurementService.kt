@@ -135,6 +135,10 @@ class SensorMeasurementService : Service() {
 
             Toast.makeText(this, "Successfully Retrieved Data", Toast.LENGTH_SHORT).show()
 
+            for (i in 0 until 100) {
+                Log.d("asdf", "1: ${accelerometerData[i]}")
+            }
+
             var isProcessSuccessful = false
 
             // 데이터 정규화. 5초 마다 구간 설정.
@@ -157,6 +161,9 @@ class SensorMeasurementService : Service() {
                 error("데이터 수집 오류")
             }
 
+            for (i in 0 until 100) {
+                Log.d("asdf", "2: ${accelerometerData[i]}")
+            }
 
             // 파이어베이스에 업로드할 데이터들
             val accX = ArrayList<Float>(SAMPLING_RATE)
@@ -177,6 +184,10 @@ class SensorMeasurementService : Service() {
                 magX, magY, magZ)
             sampleData(gyroscopeData, numOfGyroscopeData, SAMPLING_RATE,
                 gyrX, gyrY, gyrZ)
+
+            for (i in 0 until 64) {
+                Log.d("asdf", "3: ${accX[i]}")
+            }
 
 
             // 데이터가 제대로 수집 되었는 지 확인

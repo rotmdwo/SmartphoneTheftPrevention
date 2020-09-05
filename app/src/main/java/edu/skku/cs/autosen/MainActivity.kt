@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
 
     private val possibleTestIdSet = hashSetOf("sungjae","heidi","chettem","wiu",
     "seongjeong","yeongho", "yeongho_family1", "yeongho_family2","jinsol", "jinsol_family1",
-        "jinsol_family2", "hanjoon", "kan", "chanhee", "yewon", "test1Min13")
+        "jinsol_family2", "hanjoon", "kan", "chanhee", "yewon")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity() {
             button.isClickable = false
 
             userId = ID.text.toString()
-
+            
             if (userId.equals("")) {
                 if (LANGUAGE == "KOREAN")
                     Toast.makeText(applicationContext, "ID를 입력해주세요.", Toast.LENGTH_SHORT).show()
