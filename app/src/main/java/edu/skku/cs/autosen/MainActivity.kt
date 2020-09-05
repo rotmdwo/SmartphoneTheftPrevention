@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity() {
             button.isClickable = false
 
             userId = ID.text.toString()
-            
+
             if (userId.equals("")) {
                 if (LANGUAGE == "KOREAN")
                     Toast.makeText(applicationContext, "ID를 입력해주세요.", Toast.LENGTH_SHORT).show()
@@ -81,7 +81,7 @@ class MainActivity : AppCompatActivity() {
                             if (userId.equals(id)) {
                                 if (LANGUAGE == "KOREAN")
                                     Toast.makeText(applicationContext, "이미 데이터가 등록되어 있습니다.", Toast.LENGTH_LONG).show()
-                                else Toast.makeText(applicationContext, "Data is already registered with your ID", Toast.LENGTH_LONG).show()
+                                else Toast.makeText(applicationContext, "Data are already registered with your ID", Toast.LENGTH_LONG).show()
                                 button.isClickable = true
 
                                 return

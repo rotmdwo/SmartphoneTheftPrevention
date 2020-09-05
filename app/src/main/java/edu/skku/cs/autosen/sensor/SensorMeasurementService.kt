@@ -13,6 +13,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.*
 import android.util.Log
+import android.view.MotionEvent
 import android.widget.Toast
 import edu.skku.cs.autosen.MainActivity.Companion.userId
 import edu.skku.cs.autosen.R
@@ -22,10 +23,14 @@ import edu.skku.cs.autosen.utility.normalizeData
 import edu.skku.cs.autosen.utility.sampleData
 import edu.skku.cs.autosen.utility.uploadData
 import java.text.SimpleDateFormat
+import kotlin.math.abs
 
 class SensorMeasurementService : Service() {
     val timeFormat = SimpleDateFormat("mm:ss:SSS")
     var str = ""
+
+    var accDuplicated = 0
+    var accZPrevious = 0.0f
 
     // 시간 설정
     companion object {
@@ -135,10 +140,6 @@ class SensorMeasurementService : Service() {
 
             Toast.makeText(this, "Successfully Retrieved Data", Toast.LENGTH_SHORT).show()
 
-            for (i in 0 until 100) {
-                Log.d("asdf", "1: ${accelerometerData[i]}")
-            }
-
             var isProcessSuccessful = false
 
             // 데이터 정규화. 5초 마다 구간 설정.
@@ -161,10 +162,6 @@ class SensorMeasurementService : Service() {
                 error("데이터 수집 오류")
             }
 
-            for (i in 0 until 100) {
-                Log.d("asdf", "2: ${accelerometerData[i]}")
-            }
-
             // 파이어베이스에 업로드할 데이터들
             val accX = ArrayList<Float>(SAMPLING_RATE)
             val accY = ArrayList<Float>(SAMPLING_RATE)
@@ -184,10 +181,6 @@ class SensorMeasurementService : Service() {
                 magX, magY, magZ)
             sampleData(gyroscopeData, numOfGyroscopeData, SAMPLING_RATE,
                 gyrX, gyrY, gyrZ)
-
-            for (i in 0 until 64) {
-                Log.d("asdf", "3: ${accX[i]}")
-            }
 
 
             // 데이터가 제대로 수집 되었는 지 확인
@@ -239,7 +232,10 @@ class SensorMeasurementService : Service() {
                 numOfAllAccelerometerData++
                 numOfAccelerometerData[index]++
 
-                //Log.d("asdf","collecting: " + p0.values[0])
+                if (abs((p0.values[2] - accZPrevious) * 100 / accZPrevious) < 0.01) accDuplicated++
+                else accDuplicated = 0
+
+                accZPrevious = p0.values[2]
             }
         }
     }
