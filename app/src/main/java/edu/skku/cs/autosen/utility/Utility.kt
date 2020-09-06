@@ -1,8 +1,7 @@
 package edu.skku.cs.autosen.utility
 
 import android.content.Context
-import android.os.Handler
-import android.util.Log
+import android.net.ConnectivityManager
 import android.widget.Toast
 import com.google.firebase.database.*
 import edu.skku.cs.autosen.sensor.SensorMeasurementService
@@ -206,6 +205,144 @@ fun removeDatabaseItem(name1: String, name2: String? = null, name3: String? = nu
     }
 
     reference?.ref.removeValue()
+}
+
+fun checkData(accelerometerData: ArrayList<ArrayList<FloatArray>>, magnetometerData: ArrayList<ArrayList<FloatArray>>,
+              gyroscopeData: ArrayList<ArrayList<FloatArray>>, SAMPLING_RATE: Int): Boolean {
+    var numOfTotalData = 0
+    var numOfInactiveData = 0
+
+    for (i in 0..4) {
+        numOfTotalData += accelerometerData[i].size
+
+        if (accelerometerData[i].size < SAMPLING_RATE || magnetometerData[i].size < SAMPLING_RATE || gyroscopeData[i].size < SAMPLING_RATE) {
+            return false
+        }
+
+        for (j in 0 until accelerometerData[i].size) {
+            if (accelerometerData[i][j][3] == 0.0f) numOfInactiveData++
+        }
+    }
+
+    if ((numOfInactiveData.toFloat() / numOfTotalData) >= 0.99f) return false
+    return true
+}
+
+fun normalizeData(data: ArrayList<ArrayList<FloatArray>>) {
+    // 데이터의 Min, Max
+    val maxX = findMax(data, 0)
+    val minX = findMin(data, 0)
+    val maxY = findMax(data, 1)
+    val minY = findMin(data, 1)
+    val maxZ = findMax(data, 2)
+    val minZ = findMin(data, 2)
+
+    // 구간 길이
+    val lengthX = maxX - minX
+    val lengthY = maxY - minY
+    val lengthZ = maxZ - minZ
+
+    for (i in 0..4) {
+        for (j in 0 until data[i].size) {
+            data[i][j][0] = (data[i][j][0] - minX) / lengthX
+            data[i][j][1] = (data[i][j][1] - minY) / lengthY
+            data[i][j][2] = (data[i][j][2] - minZ) / lengthZ
+        }
+    }
+}
+
+fun decreaseIndex(index: Int): Int {
+    return index - 5
+}
+
+// index 0: X, index 1: Y, index 2: Z
+fun findMax(data: ArrayList<ArrayList<FloatArray>>, index: Int): Float {
+    var max = Float.MIN_VALUE
+
+    for (i in 0..4) {
+        for (j in 0 until data[i].size) {
+            if (data[i][j][index] > max) max = data[i][j][index]
+        }
+    }
+
+    return max
+}
+
+fun findMin(data: ArrayList<ArrayList<FloatArray>>, index: Int): Float {
+    var min = Float.MAX_VALUE
+
+    for (i in 0..4) {
+        for (j in 0 until data[i].size) {
+            if (data[i][j][index] < min) min = data[i][j][index]
+        }
+    }
+
+    return min
+}
+
+fun sampleData(data: ArrayList<ArrayList<FloatArray>>, SAMPLING_RATE: Int): ArrayList<ArrayList<FloatArray>> {
+    val sampledData = ArrayList<ArrayList<FloatArray>>(5)
+    for (i in 0..4) sampledData.add(ArrayList())
+
+    for (i in 0..4) {
+        val step: Float = data[i].size.toFloat() / SAMPLING_RATE
+
+        for (j in 0 until SAMPLING_RATE) {
+            sampledData[i].add(data[i][(step * j).toInt()])
+        }
+    }
+    return sampledData
+}
+
+fun uploadData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magnetometerData:  ArrayList<ArrayList<FloatArray>>,
+               gyroscopeData:  ArrayList<ArrayList<FloatArray>>, userId: String, SAMPLING_RATE: Int, secsUploaded: Int) {
+    val totalData = HashMap<String, Any>()
+
+    for (i in 0..4) {
+        val secondData = HashMap<String, Any>()
+
+        for (j in 0 until SAMPLING_RATE) {
+            val oneOver64HzData = HashMap<String, Any>()
+
+            oneOver64HzData.put("AccX", accelerometerData[i][j][0])
+            oneOver64HzData.put("AccY", accelerometerData[i][j][1])
+            oneOver64HzData.put("AccZ", accelerometerData[i][j][2])
+
+            oneOver64HzData.put("MagX", magnetometerData[i][j][0])
+            oneOver64HzData.put("MagY", magnetometerData[i][j][1])
+            oneOver64HzData.put("MagZ", magnetometerData[i][j][2])
+
+            oneOver64HzData.put("GyrX", gyroscopeData[i][j][0])
+            oneOver64HzData.put("GyrY", gyroscopeData[i][j][1])
+            oneOver64HzData.put("GyrZ", gyroscopeData[i][j][2])
+
+            secondData.put("data" + (j + 1) , oneOver64HzData)
+        }
+
+        totalData.put(userId + "/sec" + (secsUploaded + i + 1), secondData)
+    }
+
+    var reference = FirebaseDatabase.getInstance().getReference().child("Sensor_Data")
+    reference.updateChildren(totalData)
+
+    val idData = HashMap<String, Any>()
+    idData.put(userId, secsUploaded + 5)
+    reference = FirebaseDatabase.getInstance().getReference().child("Users")
+    reference.updateChildren(idData)
+}
+
+fun removeUploadedData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magnetometerData:  ArrayList<ArrayList<FloatArray>>,
+                       gyroscopeData:  ArrayList<ArrayList<FloatArray>>) {
+    for (i in 0..4) {
+        accelerometerData.removeAt(0)
+        magnetometerData.removeAt(0)
+        gyroscopeData.removeAt(0)
+    }
+}
+
+fun checkInternetStatus(context: Context): Boolean {
+    val connectivityManager: ConnectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    return connectivityManager.activeNetworkInfo != null && connectivityManager.activeNetworkInfo.isConnected
 }
 
 class Utility {

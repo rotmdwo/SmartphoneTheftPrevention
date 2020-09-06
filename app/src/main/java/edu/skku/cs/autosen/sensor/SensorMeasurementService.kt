@@ -12,24 +12,14 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.*
-import android.util.Log
-import android.view.MotionEvent
-import android.widget.Toast
 import edu.skku.cs.autosen.MainActivity.Companion.userId
 import edu.skku.cs.autosen.R
 import edu.skku.cs.autosen.RESULT_CODE
-import edu.skku.cs.autosen.utility.checkDataRetrievalIfSuccessful
-import edu.skku.cs.autosen.utility.normalizeData
-import edu.skku.cs.autosen.utility.sampleData
-import edu.skku.cs.autosen.utility.uploadData
-import java.text.SimpleDateFormat
+import edu.skku.cs.autosen.utility.*
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
 
 class SensorMeasurementService : Service() {
-    val timeFormat = SimpleDateFormat("mm:ss:SSS")
-    var str = ""
-
-    var accDuplicated = 0
     var accZPrevious = 0.0f
 
     // 시간 설정
@@ -37,29 +27,19 @@ class SensorMeasurementService : Service() {
         val MINUTES: Long = 15
         val SECONDS: Long = MINUTES * 60
     }
-    val DELAYED_TIME : Long = 1000 * SECONDS
     var previousTime = 0L
     var elapsedTime = 0L
+    //var secIndex = 0
+    var secIndex = AtomicInteger(0)
 
-    // 각 초 마다의 수집된 데이터 개수
-    var numOfAccelerometerData = IntArray((SECONDS + 1).toInt(), {0})
-    var numOfMagnetometerData = IntArray((SECONDS + 1).toInt(), {0})
-    var numOfGyroscopeData = IntArray((SECONDS + 1).toInt(), {0})
-
-    // 센서 마다의 수집된 전체 데이터 개수
-    var numOfAllAccelerometerData = 0
-    var numOfAllMagnetometerData = 0
-    var numOfAllGyroscopeData = 0
-
-    // 각 센서 데이터. x, y, z 순서로 들어감.
-    val DATA_ARRAY_SIZE = 100 * 3 * (SECONDS.toInt() + 60)
-    val accelerometerData = FloatArray(DATA_ARRAY_SIZE, {0.0f})
-    val magnetometerData = FloatArray(DATA_ARRAY_SIZE, {0.0f})
-    val gyroscopeData = FloatArray(DATA_ARRAY_SIZE, {0.0f})
+    // 각 센서 데이터. FloatArray - index 0: X, index 1: Y, index 2: Z, index 3: Active/Inactive
+    val accelerometerData = ArrayList<ArrayList<FloatArray>>(5)
+    val magnetometerData = ArrayList<ArrayList<FloatArray>>(5)
+    val gyroscopeData = ArrayList<ArrayList<FloatArray>>(5)
 
     val ANDROID_CHANNNEL_ID = "edu.skku.cs.autosen"
     val NOTIFICATION_ID = 5534
-    private val SAMPLING_RATE: Int = 64
+    val SAMPLING_RATE: Int = 64
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // For foreground service
@@ -106,94 +86,56 @@ class SensorMeasurementService : Service() {
         sensorManager.registerListener(magneticLis, magneticSensor, 10000)
 
         val resultReceiver = intent!!.getParcelableExtra<ResultReceiver>("receiver")
+        var secsUploaded = intent.getIntExtra("secsUploaded", 0)
         var bundle = Bundle()
 
         previousTime = System.currentTimeMillis()
 
-        mHandler.postDelayed({
+        Thread(Runnable {
+            while (secsUploaded < 60 * 60 * 10) {
+                if (accelerometerData.size > 5) {
+                    if (checkData(accelerometerData, magnetometerData, gyroscopeData, SAMPLING_RATE)) {
+                        normalizeData(accelerometerData)
+                        normalizeData(magnetometerData)
+                        normalizeData(gyroscopeData)
+
+                        val sampledAccelerometerData = sampleData(accelerometerData, SAMPLING_RATE)
+                        val sampledMagnetometerData = sampleData(magnetometerData, SAMPLING_RATE)
+                        val sampledGyroscopeData = sampleData(gyroscopeData, SAMPLING_RATE)
+
+                        if (!checkInternetStatus(applicationContext)) {
+                            sensorManager.unregisterListener(acceleroLis)
+                            sensorManager.unregisterListener(gyroLis)
+                            sensorManager.unregisterListener(magneticLis)
+
+                            resultReceiver.send(RESULT_CODE, bundle)
+                        }
+
+                        uploadData(sampledAccelerometerData, sampledMagnetometerData, sampledGyroscopeData,
+                            userId, SAMPLING_RATE, secsUploaded)
+
+                        secsUploaded += 5
+                        //secIndex = decreaseIndex(secIndex)
+                        previousTime += 5000
+                        secIndex.addAndGet(-5)
+
+                        removeUploadedData(accelerometerData, magnetometerData, gyroscopeData)
+                    } else {
+                        //secIndex = decreaseIndex(secIndex)
+                        previousTime += 5000
+                        secIndex.addAndGet(-5)
+
+                        removeUploadedData(accelerometerData, magnetometerData, gyroscopeData)
+                    }
+                }
+            }
+
             sensorManager.unregisterListener(acceleroLis)
             sensorManager.unregisterListener(gyroLis)
             sensorManager.unregisterListener(magneticLis)
 
-            /*  startActivity로 서비스의 결과를 전달하면, 백그라운드 상태에서는 액티비티가 인텐트를 받지 못한다.
-            val backIntent = Intent(applicationContext, MainActivity::class.java)
-            backIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            backIntent.putExtra("string", str)
-            startActivity(backIntent)
-            */
-
-            // 액티비티로 데이터 보내기
-            //bundle.putString("str",str)
-            //bundle.putInt("numOfAccelerometerData", numOfAccelerometerData)
-            //bundle.putInt("numOfMagnetometerData", numOfMagnetometerData)
-            //bundle.putInt("numOfGyroscopeData", numOfGyroscopeData)
-            /*
-            bundle.putIntArray("numOfAccelerometerData", numOfAccelerometerData)
-            bundle.putIntArray("numOfMagnetometerData", numOfMagnetometerData)
-            bundle.putIntArray("numOfGyroscopeData", numOfGyroscopeData)
-            bundle.putFloatArray("accelerometerData", accelerometerData)
-            bundle.putFloatArray("magnetometerData", magnetometerData)
-            bundle.putFloatArray("gyroscopeData", gyroscopeData)
             resultReceiver.send(RESULT_CODE, bundle)
-
-             */
-
-            Toast.makeText(this, "Successfully Retrieved Data", Toast.LENGTH_SHORT).show()
-
-            var isProcessSuccessful = false
-
-            // 데이터 정규화. 5초 마다 구간 설정.
-            if (accelerometerData != null && numOfAccelerometerData != null) {
-                isProcessSuccessful = normalizeData(accelerometerData, numOfAccelerometerData, applicationContext)
-                if (!isProcessSuccessful) error("데이터 정규화 오류")
-            } else {
-                error("데이터 수집 오류")
-            }
-            if (magnetometerData != null && numOfMagnetometerData != null) {
-                isProcessSuccessful = normalizeData(magnetometerData, numOfMagnetometerData, applicationContext)
-                if (!isProcessSuccessful) error("데이터 정규화 오류")
-            } else {
-                error("데이터 수집 오류")
-            }
-            if (gyroscopeData != null && numOfGyroscopeData != null) {
-                isProcessSuccessful = normalizeData(gyroscopeData, numOfGyroscopeData, applicationContext)
-                if (!isProcessSuccessful) error("데이터 정규화 오류")
-            } else {
-                error("데이터 수집 오류")
-            }
-
-            // 파이어베이스에 업로드할 데이터들
-            val accX = ArrayList<Float>(SAMPLING_RATE)
-            val accY = ArrayList<Float>(SAMPLING_RATE)
-            val accZ = ArrayList<Float>(SAMPLING_RATE)
-            val magX = ArrayList<Float>(SAMPLING_RATE)
-            val magY = ArrayList<Float>(SAMPLING_RATE)
-            val magZ = ArrayList<Float>(SAMPLING_RATE)
-            val gyrX = ArrayList<Float>(SAMPLING_RATE)
-            val gyrY = ArrayList<Float>(SAMPLING_RATE)
-            val gyrZ = ArrayList<Float>(SAMPLING_RATE)
-
-
-            // 1초 당 64개의 데이터만 뽑아내 사용
-            sampleData(accelerometerData, numOfAccelerometerData, SAMPLING_RATE,
-                accX, accY, accZ)
-            sampleData(magnetometerData, numOfMagnetometerData, SAMPLING_RATE,
-                magX, magY, magZ)
-            sampleData(gyroscopeData, numOfGyroscopeData, SAMPLING_RATE,
-                gyrX, gyrY, gyrZ)
-
-
-            // 데이터가 제대로 수집 되었는 지 확인
-            isProcessSuccessful = checkDataRetrievalIfSuccessful(accX, accY, accZ, magX, magY, magZ, gyrX, gyrY, gyrZ, applicationContext)
-            if (!isProcessSuccessful) error("데이터 수집 오류")
-
-
-            // 데이터 업로드
-            uploadData(SAMPLING_RATE, accX, accY, accZ, magX, magY, magZ, gyrX, gyrY, gyrZ, userId)
-
-            resultReceiver.send(RESULT_CODE, bundle)
-
-        }, DELAYED_TIME)
+        }).start()
 
         return Service.START_REDELIVER_INTENT
     }
@@ -210,32 +152,22 @@ class SensorMeasurementService : Service() {
 
         override fun onSensorChanged(p0: SensorEvent?) {
             if (p0!!.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-                //textView.text = "${textView.text}${timeFormat.format(System.currentTimeMillis())} accX: ${p0!!.values[0]} accY: ${p0!!.values[1]} accZ: ${p0!!.values[2]}\n"
-                //str += "${timeFormat.format(System.currentTimeMillis())} accX: ${p0!!.values[0]} accY: ${p0!!.values[1]} accZ: ${p0!!.values[2]}\n"
+
                 elapsedTime = System.currentTimeMillis() - previousTime
-                val index = (elapsedTime / 1000).toInt()
-                /*
-                var base = 0
-                for (i in 0..index) {
-                    base += numOfAccelerometerData[i]
-                }
-                accelerometerData[base * 3 + 0] = p0.values[0]
-                accelerometerData[base * 3 + 1] = p0.values[1]
-                accelerometerData[base * 3 + 2] = p0.values[2]
-                numOfAccelerometerData[index]++
+                secIndex = AtomicInteger((elapsedTime / 1000).toInt())
 
-                 */
-
-                accelerometerData[numOfAllAccelerometerData * 3 + 0] = p0.values[0]
-                accelerometerData[numOfAllAccelerometerData * 3 + 1] = p0.values[1]
-                accelerometerData[numOfAllAccelerometerData * 3 + 2] = p0.values[2]
-                numOfAllAccelerometerData++
-                numOfAccelerometerData[index]++
-
-                if (abs((p0.values[2] - accZPrevious) * 100 / accZPrevious) < 0.01) accDuplicated++
-                else accDuplicated = 0
+                // 0.5%의 변화 미만은 바닥에 둔 걸로 판단 가능. 스마트폰을 들고 있을 때는 5초 이상 0.5% 이상 안 바뀌기 쉽지 않음.
+                var isActive = 1.0f
+                if (abs((p0.values[2] - accZPrevious) / accZPrevious) < 0.005) isActive = 0.0f
 
                 accZPrevious = p0.values[2]
+
+                if (accelerometerData.getOrNull(secIndex.toInt()) != null)
+                    accelerometerData[secIndex.toInt()].add(floatArrayOf(p0.values[0], p0.values[1], p0.values[2], isActive))
+                else {
+                    accelerometerData.add(ArrayList())
+                    accelerometerData[secIndex.toInt()].add(floatArrayOf(p0.values[0], p0.values[1], p0.values[2], isActive))
+                }
             }
         }
     }
@@ -248,29 +180,15 @@ class SensorMeasurementService : Service() {
 
         override fun onSensorChanged(p0: SensorEvent?) {
             if (p0!!.sensor.type == Sensor.TYPE_GYROSCOPE) {
-                //textView.text = "${textView.text}${timeFormat.format(System.currentTimeMillis())} gyroX: ${p0!!.values[0]} gyroY: ${p0!!.values[1]} gyroZ: ${p0!!.values[2]}\n"
-                //str += "${timeFormat.format(System.currentTimeMillis())} gyroX: ${p0!!.values[0]} gyroY: ${p0!!.values[1]} gyroZ: ${p0!!.values[2]}\n"
                 elapsedTime = System.currentTimeMillis() - previousTime
-                val index = (elapsedTime / 1000).toInt()
-                /*
-                var base = 0
-                for (i in 0..index) {
-                    base += numOfGyroscopeData[i]
+                secIndex = AtomicInteger((elapsedTime / 1000).toInt())
+
+                if (gyroscopeData.getOrNull(secIndex.toInt()) != null)
+                    gyroscopeData[secIndex.toInt()].add(floatArrayOf(p0.values[0], p0.values[1], p0.values[2]))
+                else {
+                    gyroscopeData.add(ArrayList())
+                    gyroscopeData[secIndex.toInt()].add(floatArrayOf(p0.values[0], p0.values[1], p0.values[2]))
                 }
-                gyroscopeData[base * 3 + 0] = p0.values[0]
-                gyroscopeData[base * 3 + 1] = p0.values[1]
-                gyroscopeData[base * 3 + 2] = p0.values[2]
-                numOfGyroscopeData[index]++
-
-                 */
-
-
-                gyroscopeData[numOfAllGyroscopeData * 3 + 0] = p0.values[0]
-                gyroscopeData[numOfAllGyroscopeData * 3 + 1] = p0.values[1]
-                gyroscopeData[numOfAllGyroscopeData * 3 + 2] = p0.values[2]
-                numOfAllGyroscopeData++
-                numOfGyroscopeData[index]++
-
             }
         }
     }
@@ -283,29 +201,15 @@ class SensorMeasurementService : Service() {
 
         override fun onSensorChanged(p0: SensorEvent?) {
             if (p0!!.sensor.type == Sensor.TYPE_MAGNETIC_FIELD) {
-                //textView.text = "${textView.text}${timeFormat.format(System.currentTimeMillis())} magX: ${p0!!.values[0]} magY: ${p0!!.values[1]} magZ: ${p0!!.values[2]}\n"
-                //str += "${timeFormat.format(System.currentTimeMillis())} magX: ${p0!!.values[0]} magY: ${p0!!.values[1]} magZ: ${p0!!.values[2]}\n"
                 elapsedTime = System.currentTimeMillis() - previousTime
-                val index = (elapsedTime / 1000).toInt()
-                /*
-                var base = 0
-                for (i in 0..index) {
-                    base += numOfMagnetometerData[i]
+                secIndex = AtomicInteger((elapsedTime / 1000).toInt())
+
+                if (magnetometerData.getOrNull(secIndex.toInt()) != null)
+                    magnetometerData[secIndex.toInt()].add(floatArrayOf(p0.values[0], p0.values[1], p0.values[2]))
+                else {
+                    magnetometerData.add(ArrayList())
+                    magnetometerData[secIndex.toInt()].add(floatArrayOf(p0.values[0], p0.values[1], p0.values[2]))
                 }
-                magnetometerData[base * 3 + 0] = p0.values[0]
-                magnetometerData[base * 3 + 1] = p0.values[1]
-                magnetometerData[base * 3 + 2] = p0.values[2]
-                numOfMagnetometerData[index]++
-
-                 */
-
-
-                magnetometerData[numOfAllMagnetometerData * 3 + 0] = p0.values[0]
-                magnetometerData[numOfAllMagnetometerData * 3 + 1] = p0.values[1]
-                magnetometerData[numOfAllMagnetometerData * 3 + 2] = p0.values[2]
-                numOfAllMagnetometerData++
-                numOfMagnetometerData[index]++
-
             }
         }
     }
