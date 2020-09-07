@@ -1,8 +1,12 @@
 package edu.skku.cs.autosen
 
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.os.PowerManager
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -14,6 +18,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 
 import edu.skku.cs.autosen.sensor.MyReceiver
 import edu.skku.cs.autosen.sensor.SensorMeasurementService
+import edu.skku.cs.autosen.utility.removeDatabaseItem
 import java.util.*
 
 const val RESULT_CODE = 101
@@ -22,6 +27,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         var LANGUAGE = "KOREAN"
         var userId = ""
+        var secsUploaded = 0
     }
 
     private val possibleTestIdSet = hashSetOf("sungjae","heidi","chettem","wiu",
@@ -35,6 +41,14 @@ class MainActivity : AppCompatActivity() {
         if (Locale.getDefault().language != "ko") {
             LANGUAGE = "OTHERS"
             button.text = "Start"
+        }
+
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
+            val intent = Intent()
+            intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+            intent.setData(Uri.parse("package:" + packageName))
+            startActivityForResult(intent, 0)
         }
 
         val receiver = MyReceiver(Handler())
@@ -69,7 +83,7 @@ class MainActivity : AppCompatActivity() {
 
                     override fun onDataChange(snapshot: DataSnapshot) {
                         val userIds = snapshot.children
-                        var secsUploaded = 0
+                        //var secsUploaded = 0
 
                         for (i in userIds) {
                             val id = i.key
@@ -91,10 +105,11 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         // Start Service
-                        val intent = Intent(applicationContext, SensorMeasurementService::class.java)
+                        val intent = Intent(baseContext, SensorMeasurementService::class.java)
                         intent.putExtra("receiver",receiver )
-                        intent.putExtra("secsUploaded", secsUploaded)
-                        startService(intent)
+                        //intent.putExtra("secsUploaded", secsUploaded)
+                        //startService(intent)
+                        startForegroundService(intent)
                     }
 
                 }

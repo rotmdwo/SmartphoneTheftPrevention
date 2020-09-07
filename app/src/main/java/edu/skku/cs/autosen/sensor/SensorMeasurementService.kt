@@ -12,6 +12,8 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.*
+import edu.skku.cs.autosen.MainActivity.Companion.LANGUAGE
+import edu.skku.cs.autosen.MainActivity.Companion.secsUploaded
 import edu.skku.cs.autosen.MainActivity.Companion.userId
 import edu.skku.cs.autosen.R
 import edu.skku.cs.autosen.RESULT_CODE
@@ -23,10 +25,6 @@ class SensorMeasurementService : Service() {
     var accZPrevious = 0.0f
 
     // 시간 설정
-    companion object {
-        val MINUTES: Long = 15
-        val SECONDS: Long = MINUTES * 60
-    }
     var previousTime = 0L
     var elapsedTime = 0L
     //var secIndex = 0
@@ -45,17 +43,25 @@ class SensorMeasurementService : Service() {
         // For foreground service
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationChannel = NotificationChannel(ANDROID_CHANNNEL_ID,
-                "Retrieve Sensor Data", NotificationManager.IMPORTANCE_NONE)
+                "Retrieve Sensor Data", NotificationManager.IMPORTANCE_DEFAULT)
 
-            notificationChannel.lightColor = Color.WHITE
-            notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+            notificationChannel.lightColor = Color.RED
+            notificationChannel.description ="데이터 수집중"
+            //notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+            notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
 
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(notificationChannel)
 
+            var contentText = "센서 데이터를 수집중입니다."
+            if (LANGUAGE == "OTHERS") contentText = "Retrieving Data"
+
             val notificationBuilder = Notification.Builder(this, ANDROID_CHANNNEL_ID)
                 .setContentTitle(getString(R.string.app_name))
-                .setContentText("센서 데이터를 수집중입니다.")
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentText(contentText)
+                .setAutoCancel(false)
+                .setOngoing(true)
 
             val notification = notificationBuilder.build()
 
@@ -86,7 +92,7 @@ class SensorMeasurementService : Service() {
         sensorManager.registerListener(magneticLis, magneticSensor, 10000)
 
         val resultReceiver = intent!!.getParcelableExtra<ResultReceiver>("receiver")
-        var secsUploaded = intent.getIntExtra("secsUploaded", 0)
+        //var secsUploaded = intent.getIntExtra("secsUploaded", 0)
         var bundle = Bundle()
 
         previousTime = System.currentTimeMillis()
@@ -111,21 +117,26 @@ class SensorMeasurementService : Service() {
                             resultReceiver.send(RESULT_CODE, bundle)
                         }
 
-                        uploadData(sampledAccelerometerData, sampledMagnetometerData, sampledGyroscopeData,
-                            userId, SAMPLING_RATE, secsUploaded)
+                        if (checkIfIdAvailable(userId, this))
+                            uploadData(sampledAccelerometerData, sampledMagnetometerData, sampledGyroscopeData,
+                                userId, SAMPLING_RATE, secsUploaded)
 
                         secsUploaded += 5
                         //secIndex = decreaseIndex(secIndex)
                         previousTime += 5000
-                        secIndex.addAndGet(-5)
+                        elapsedTime = System.currentTimeMillis() - previousTime
+                        secIndex = AtomicInteger((elapsedTime / 1000).toInt())
 
-                        removeUploadedData(accelerometerData, magnetometerData, gyroscopeData)
+                        if (accelerometerData.size > 5)
+                            removeUploadedData(accelerometerData, magnetometerData, gyroscopeData)
                     } else {
                         //secIndex = decreaseIndex(secIndex)
                         previousTime += 5000
-                        secIndex.addAndGet(-5)
+                        elapsedTime = System.currentTimeMillis() - previousTime
+                        secIndex = AtomicInteger((elapsedTime / 1000).toInt())
 
-                        removeUploadedData(accelerometerData, magnetometerData, gyroscopeData)
+                        if (accelerometerData.size > 5)
+                            removeUploadedData(accelerometerData, magnetometerData, gyroscopeData)
                     }
                 }
             }
@@ -137,7 +148,8 @@ class SensorMeasurementService : Service() {
             resultReceiver.send(RESULT_CODE, bundle)
         }).start()
 
-        return Service.START_REDELIVER_INTENT
+        //return Service.START_REDELIVER_INTENT
+        return START_NOT_STICKY
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -152,7 +164,7 @@ class SensorMeasurementService : Service() {
 
         override fun onSensorChanged(p0: SensorEvent?) {
             if (p0!!.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-
+                previousTime = checkIfRestedForLong(accelerometerData, magnetometerData, gyroscopeData, previousTime)
                 elapsedTime = System.currentTimeMillis() - previousTime
                 secIndex = AtomicInteger((elapsedTime / 1000).toInt())
 
@@ -165,7 +177,7 @@ class SensorMeasurementService : Service() {
                 if (accelerometerData.getOrNull(secIndex.toInt()) != null)
                     accelerometerData[secIndex.toInt()].add(floatArrayOf(p0.values[0], p0.values[1], p0.values[2], isActive))
                 else {
-                    accelerometerData.add(ArrayList())
+                    while (accelerometerData.size - 1 < secIndex.toInt()) accelerometerData.add(ArrayList())
                     accelerometerData[secIndex.toInt()].add(floatArrayOf(p0.values[0], p0.values[1], p0.values[2], isActive))
                 }
             }
@@ -180,13 +192,14 @@ class SensorMeasurementService : Service() {
 
         override fun onSensorChanged(p0: SensorEvent?) {
             if (p0!!.sensor.type == Sensor.TYPE_GYROSCOPE) {
+                previousTime = checkIfRestedForLong(accelerometerData, magnetometerData, gyroscopeData, previousTime)
                 elapsedTime = System.currentTimeMillis() - previousTime
                 secIndex = AtomicInteger((elapsedTime / 1000).toInt())
 
                 if (gyroscopeData.getOrNull(secIndex.toInt()) != null)
                     gyroscopeData[secIndex.toInt()].add(floatArrayOf(p0.values[0], p0.values[1], p0.values[2]))
                 else {
-                    gyroscopeData.add(ArrayList())
+                    while (gyroscopeData.size - 1 < secIndex.toInt()) gyroscopeData.add(ArrayList())
                     gyroscopeData[secIndex.toInt()].add(floatArrayOf(p0.values[0], p0.values[1], p0.values[2]))
                 }
             }
@@ -201,13 +214,14 @@ class SensorMeasurementService : Service() {
 
         override fun onSensorChanged(p0: SensorEvent?) {
             if (p0!!.sensor.type == Sensor.TYPE_MAGNETIC_FIELD) {
+                previousTime = checkIfRestedForLong(accelerometerData, magnetometerData, gyroscopeData, previousTime)
                 elapsedTime = System.currentTimeMillis() - previousTime
                 secIndex = AtomicInteger((elapsedTime / 1000).toInt())
 
                 if (magnetometerData.getOrNull(secIndex.toInt()) != null)
                     magnetometerData[secIndex.toInt()].add(floatArrayOf(p0.values[0], p0.values[1], p0.values[2]))
                 else {
-                    magnetometerData.add(ArrayList())
+                    while (magnetometerData.size - 1 < secIndex.toInt()) magnetometerData.add(ArrayList())
                     magnetometerData[secIndex.toInt()].add(floatArrayOf(p0.values[0], p0.values[1], p0.values[2]))
                 }
             }

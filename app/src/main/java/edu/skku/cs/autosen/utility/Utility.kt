@@ -151,10 +151,10 @@ gyrX: ArrayList<Float>, gyrY: ArrayList<Float>, gyrZ: ArrayList<Float>, context:
 
 fun uploadData(samplingRate: Int, accX: ArrayList<Float>, accY: ArrayList<Float>, accZ: ArrayList<Float>,
                magX: ArrayList<Float>, magY: ArrayList<Float>, magZ: ArrayList<Float>, gyrX: ArrayList<Float>,
-               gyrY: ArrayList<Float>, gyrZ: ArrayList<Float>, userId: String) {
+               gyrY: ArrayList<Float>, gyrZ: ArrayList<Float>, userId: String, SECONDS: Int) {
     val totalData = HashMap<String, Any>()
 
-    for (i in 1 ..SensorMeasurementService.SECONDS) {
+    for (i in 1 ..SECONDS) {
         val secondData = HashMap<String, Any>()
 
         for (j in 1 .. samplingRate) {
@@ -331,6 +331,7 @@ fun uploadData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magnetomete
     reference.updateChildren(idData)
 }
 
+
 fun removeUploadedData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magnetometerData:  ArrayList<ArrayList<FloatArray>>,
                        gyroscopeData:  ArrayList<ArrayList<FloatArray>>) {
     for (i in 0..4) {
@@ -340,9 +341,33 @@ fun removeUploadedData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, mag
     }
 }
 
+// 인터넷이 연결상태 확인
 fun checkInternetStatus(context: Context): Boolean {
     val connectivityManager: ConnectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     return connectivityManager.activeNetworkInfo != null && connectivityManager.activeNetworkInfo.isConnected
+}
+
+// 앱 재시작으로 인해 ID가 null이 아닌지 확인
+fun checkIfIdAvailable(userId: String, service: SensorMeasurementService): Boolean {
+    if (userId == "") {
+        service.stopForeground(true)
+        service.stopSelf()
+        return false
+    }
+    return true
+}
+
+// 화면이 꺼진 상태에서 돌아왔는지 확인
+fun checkIfRestedForLong(accelerometerData: ArrayList<ArrayList<FloatArray>>, magnetometerData: ArrayList<ArrayList<FloatArray>>,
+                         gyroscopeData: ArrayList<ArrayList<FloatArray>>, previousTime: Long): Long {
+    if (System.currentTimeMillis() - previousTime > 8000) {
+        accelerometerData.clear()
+        magnetometerData.clear()
+        gyroscopeData.clear()
+        return System.currentTimeMillis()
+    }
+
+    return previousTime
 }
 
 class Utility {
