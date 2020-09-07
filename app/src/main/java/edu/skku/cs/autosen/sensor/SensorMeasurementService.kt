@@ -98,7 +98,7 @@ class SensorMeasurementService : Service() {
         previousTime = System.currentTimeMillis()
 
         Thread(Runnable {
-            while (secsUploaded < 60 * 60 * 10) {
+            while (secsUploaded < 60 * 60 * 5) {
                 if (accelerometerData.size > 5) {
                     if (checkData(accelerometerData, magnetometerData, gyroscopeData, SAMPLING_RATE)) {
                         normalizeData(accelerometerData)

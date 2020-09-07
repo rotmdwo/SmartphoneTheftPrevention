@@ -9,6 +9,7 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.UiThread
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -20,6 +21,8 @@ import edu.skku.cs.autosen.sensor.MyReceiver
 import edu.skku.cs.autosen.sensor.SensorMeasurementService
 import edu.skku.cs.autosen.utility.removeDatabaseItem
 import java.util.*
+import kotlin.concurrent.timer
+import kotlin.concurrent.timerTask
 
 const val RESULT_CODE = 101
 
@@ -90,8 +93,9 @@ class MainActivity : AppCompatActivity() {
 
                             if (userId.equals(id)) {
                                 secsUploaded = (i.value as Long).toInt()
+                                textView.text = "${secsUploaded} / 18000"
 
-                                if (secsUploaded >= 60 * 60 * 10) {
+                                if (secsUploaded >= 60 * 60 * 5) {
                                     if (LANGUAGE == "KOREAN")
                                         Toast.makeText(applicationContext, "이미 충분한 데이터가 등록되어 있습니다.", Toast.LENGTH_LONG).show()
                                     else Toast.makeText(applicationContext, "Enough data are already registered with your ID", Toast.LENGTH_LONG).show()
@@ -115,6 +119,14 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 query.addListenerForSingleValueEvent(singleValueEventListener)
+            }
+        }
+
+        timer(period = 1000L) {
+            runOnUiThread {
+                if (secsUploaded != 0) button.isClickable = false
+                else button.isClickable = true
+                textView.text = "${secsUploaded} / 18000"
             }
         }
     }
