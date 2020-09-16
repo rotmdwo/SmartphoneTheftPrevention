@@ -9,6 +9,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 from keras.utils import np_utils
+from keras.callbacks import ModelCheckpoint
 
 user_id = "sungjae"
 
@@ -17,8 +18,8 @@ y_train = [[2], [10]]
 X_test = [[[3, 4, 5, 6, 7, 8, 9, 10, 11], [4, 5, 6, 7, 8, 9, 10, 11, 12]], [[12, 11, 10, 9, 8, 7, 6, 5, 4], [14, 13, 12, 11, 10, 9, 8, 7, 6]]]
 y_test = [[1], [0]]
 
-y_train = np_utils.to_categorical(y_train)
-y_test = np_utils.to_categorical(y_test)
+#y_train = np_utils.to_categorical(y_train)
+#y_test = np_utils.to_categorical(y_test)
 
 model = Sequential()
 model.add(Bidirectional(LSTM(100, return_sequences= True, input_shape= (None, 9)), input_shape= (2, 9)))
@@ -36,6 +37,8 @@ model.add(Dense(units= 1))
 
 model.add(Activation('linear'))
 model.compile(loss= 'mse', optimizer= 'rmsprop')
+
+#cp_callback = ModelCheckpoint('d:\\Android\\AndroidStudioProjects\\AUToSen\\model\\keras_' + user_id + '_test.ckpt', verbose=1)
 
 model.fit(np.array(X_train), np.array(y_train), batch_size= 32, epochs=1, validation_split= 0.05)
 
@@ -70,7 +73,15 @@ correctRatio = (truePositive + trueNegative) * 100 / total
 far = falsePositive * 100 / total
 frr = falseNegative * 100 / total
 
-model.save('d:\\Android\\AndroidStudioProjects\\AUToSen\\model\\keras_' + user_id + '.ckpt')
+
+#tf.train.Checkpoint()
+#tf.keras.Model.save_weights('d:\\Android\\AndroidStudioProjects\\AUToSen\\model\\keras_' + user_id + '_test')
+#tf.compat.v1.train.Saver([])
+#model.save_weights('d:\\Android\\AndroidStudioProjects\\AUToSen\\model\\keras_' + user_id + '_test', save_format= "tf")
+#save_model(model, 'd:\\Android\\AndroidStudioProjects\\AUToSen\\model\\keras_' + user_id + '_test.ckpt')
+saver = tf.compat.v1.train.Saver([1,2,3])
+saver.save(tf.compat.v1.Session(), '/tmp/keras_' + user_id + '_test.ckpt')
+#model.save('d:\\Android\\AndroidStudioProjects\\AUToSen\\model\\keras_' + user_id + '.ckpt')
 
 ys = [correctRatio, far, frr]
 label = ["Correct", "FAR", "FRR"]

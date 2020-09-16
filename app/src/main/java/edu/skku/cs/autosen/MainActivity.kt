@@ -34,8 +34,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val possibleTestIdSet = hashSetOf("sungjae","heidi","chettem","wiu",
-    "seongjeong","youngoh", "youngoh_family1", "youngoh_family2","jinsol", "jinsol_family1",
-        "jinsol_family2", "hanjoon", "kan", "chanhee", "yewon")
+    "seongjeong","youngoh","jinsol", "hanjoon", "kan", "chanhee", "yewon", "other1", "other2", "other3")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
