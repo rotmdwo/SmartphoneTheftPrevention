@@ -7,6 +7,7 @@ from keras.layers.core import Dense, Activation, Dropout
 #from keras.utils.np_utils import to_categorical
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
 
 import firebase_admin
 from firebase_admin import credentials
@@ -20,13 +21,13 @@ cred = credentials.Certificate(firebase_json_location)
 
 default_app = firebase_admin.initialize_app(cred, {'databaseURL':db_url})
 
-epochs = 10
+epochs = 40
 num_neurons = 100
 seq_len = 64    # 64Hz의 센서 데이터 이용
 sample_len = 9 # 센서데이터 9개
 pred_len = 1
 
-user_id = "rotmdwo1"
+user_id = "sungjae"
 num_of_other_users_data = 5
 
 '''
@@ -92,7 +93,16 @@ def load_data(user_id, seq_len, pred_len):
     ref = db.reference("Sensor_Data")
     # 딕셔너리 형태 .. Dictionary[key]로 value에 접근
     snapshot_self = ref.child(user_id).get() # 스마트폰 주인의 데이터 reference
-    snapshot_others = ref.order_by_key().limit_to_first(num_of_other_users_data + 1).get() # 타인들의 데이터들 reference
+    #snapshot_others = ref.order_by_key().limit_to_first(num_of_other_users_data + 1).get() # 타인들의 데이터들 reference
+
+    # requests.exceptions.HTTPError: 413 Client Error: Request Entity Too Large for url로 인한 하드코딩
+    snapshot_other1 = ref.child("chettem").get()
+    snapshot_other2 = ref.child("jinsol").get()
+    snapshot_other3 = ref.child("seongjeong").get()
+    snapshot_other4 = ref.child("wiu").get()
+    snapshot_other5 = ref.child("youngoh").get()
+    snapshot_others = {"chettem": snapshot_other1, "jinsol": snapshot_other2, "seongjeong": snapshot_other3, "wiu": snapshot_other4, "youngoh": snapshot_other5}
+
 
     result = [] # 9개의 센서 데이터와 주인 여부를 1초 단위로 묶은 것 => 3차원 배열
 
@@ -108,7 +118,7 @@ def load_data(user_id, seq_len, pred_len):
             for data in oneOver64HzDataDictionary1D:
                 oneOver64HzDataList1D.append(oneOver64HzDataDictionary1D[data])
 
-            oneOver64HzDataList1D.append(0) # 스마트폰의 주인이라는 의미하는 class 추가
+            oneOver64HzDataList1D.append(1) # 스마트폰의 주인이라는 걸 의미하는 class 추가
             secondDataList2D.append(oneOver64HzDataList1D)
 
         result.append(secondDataList2D)
@@ -131,7 +141,7 @@ def load_data(user_id, seq_len, pred_len):
                 for data in oneOver64HzDataDictionary1D:
                     oneOver64HzDataList1D.append(oneOver64HzDataDictionary1D[data])
 
-                oneOver64HzDataList1D.append(1)  # 스마트폰의 주인이라는 의미하는 class 추가
+                oneOver64HzDataList1D.append(0)  # 스마트폰의 주인이 아니라는 걸 의미하는 class 추가
                 secondDataList2D.append(oneOver64HzDataList1D)
 
             result.append(secondDataList2D)
@@ -142,7 +152,7 @@ def load_data(user_id, seq_len, pred_len):
     result = np.array(result)
     np.random.shuffle(result)
 
-    row = int(round(0.8 * result.shape[0]))
+    row = int(round(0.9 * result.shape[0]))
     train = result[ : row, : , :]
     test = result[row : , : , :]
 
@@ -183,15 +193,15 @@ X_train, y_train, X_test, y_test = load_data(user_id, seq_len, pred_len)
 # input_shape에서 맨 앞 차원(데이터 수)는 적지 않고 2차원, 3차원 크기만 씀
 model = Sequential()
 model.add(Bidirectional(LSTM(num_neurons, return_sequences= True, input_shape= (None, sample_len)), input_shape= (seq_len, sample_len)))
-model.add(Dropout(0.25))
+model.add(Dropout(0.2))
 #model.add(LSTM(num_neurons, return_sequences= True, input_shape= (9,)))
 #model.add(Dropout(0.25))
 
 model.add(LSTM(num_neurons, return_sequences=True))
-model.add(Dropout(0.25))
+model.add(Dropout(0.2))
 
 model.add(LSTM(num_neurons, return_sequences=False))
-model.add(Dropout(0.25))
+model.add(Dropout(0.2))
 
 model.add(Dense(units= pred_len))
 
@@ -202,3 +212,47 @@ model.fit(np.array(X_train), np.array(y_train), batch_size= 32, epochs=epochs, v
 
 print(model.output.op.name)
 print(model.input.op.name)
+
+#model.save(tf.compat.v1.Session(), '/tmp/keras_' + user_id + '.ckpt')
+#saver = tf.compat.v1.train.Saver()
+#saver.save(K.get_session(), '/tmp/keras_' + user_id + '.ckpt')
+
+# 테스트 값 예측
+predictions = []
+total = len(X_test)
+truePositive = 0
+falsePositive = 0 # FP -> FAR
+falseNegative = 0 #FN -> FRR
+trueNegative = 0
+
+for i in range(len(X_test)):
+    input = X_test[i]
+    y_pred = model.predict(np.array(input).reshape(1, seq_len, sample_len)) # 3차원 배열로 바꿈
+    #predictions.append(y_pred)
+
+    if (y_test[i][0] == 1 and y_pred[0][0] >= 0.5) or (y_test[i][0] == 0 and y_pred[0][0] < 0.5):
+        if y_pred[0][0] >= 0.5:
+            truePositive += 1
+        else:
+            trueNegative += 1
+    else:
+        if y_pred[0][0] >= 0.5:
+            falsePositive += 1
+        else:
+            falseNegative += 1
+
+
+correctRatio = (truePositive + trueNegative) * 100 / total
+far = falsePositive * 100 / total
+frr = falseNegative * 100 / total
+
+model.save('d:\\Android\\AndroidStudioProjects\\AUToSen\\model\\keras_' + user_id + '_' + str(epochs) +'_' + str(far) + '_' + str(frr) + '.ckpt')
+
+ys = [correctRatio, far, frr]
+label = ["Correct", "FAR", "FRR"]
+plt.bar(label, ys)
+plt.title("%s - epochs = %d, seq_len = %d, sample_len = %d : %d/%d = %.2f%%" %(user_id, epochs, seq_len, sample_len, truePositive + trueNegative, total, correctRatio))
+plt.ylabel("Ratio")
+plt.show()
+
+print("FAR: %f, FRR: %f" %(far, frr))
