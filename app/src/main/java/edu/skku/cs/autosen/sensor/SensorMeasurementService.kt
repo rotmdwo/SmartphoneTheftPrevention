@@ -19,9 +19,12 @@ import edu.skku.cs.autosen.R
 import edu.skku.cs.autosen.RESULT_CODE
 import edu.skku.cs.autosen.utility.*
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.concurrent.timer
 import kotlin.math.abs
 
 class SensorMeasurementService : Service() {
+    val service = this
+
     var accZPrevious = 0.0f
 
     // 시간 설정
@@ -68,9 +71,9 @@ class SensorMeasurementService : Service() {
             startForeground(NOTIFICATION_ID, notification)
         }
 
-        val handlerThread = HandlerThread("background-thread")
-        handlerThread.start()
-        val mHandler = Handler(handlerThread.looper)
+        //val handlerThread = HandlerThread("background-thread")
+        //handlerThread.start()
+        //val mHandler = Handler(handlerThread.looper)
 
         // Sensors
         val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -92,13 +95,12 @@ class SensorMeasurementService : Service() {
         sensorManager.registerListener(magneticLis, magneticSensor, 10000)
 
         val resultReceiver = intent!!.getParcelableExtra<ResultReceiver>("receiver")
-        //var secsUploaded = intent.getIntExtra("secsUploaded", 0)
-        var bundle = Bundle()
+        val bundle = Bundle()
 
         previousTime = System.currentTimeMillis()
 
-        Thread(Runnable {
-            while (secsUploaded < 60 * 60 * 5) {
+        timer(period = 1000L) {
+            if (secsUploaded < 60 * 60 * 5) {
                 if (accelerometerData.size > 5) {
                     if (checkData(accelerometerData, magnetometerData, gyroscopeData, SAMPLING_RATE)) {
                         normalizeData(accelerometerData)
@@ -117,7 +119,7 @@ class SensorMeasurementService : Service() {
                             resultReceiver.send(RESULT_CODE, bundle)
                         }
 
-                        if (checkIfIdAvailable(userId, this))
+                        if (checkIfIdAvailable(userId, service))
                             uploadData(sampledAccelerometerData, sampledMagnetometerData, sampledGyroscopeData,
                                 userId, SAMPLING_RATE, secsUploaded)
 
@@ -139,14 +141,15 @@ class SensorMeasurementService : Service() {
                             removeUploadedData(accelerometerData, magnetometerData, gyroscopeData)
                     }
                 }
+            } else {
+                sensorManager.unregisterListener(acceleroLis)
+                sensorManager.unregisterListener(gyroLis)
+                sensorManager.unregisterListener(magneticLis)
+
+                resultReceiver.send(RESULT_CODE, bundle)
+                return@timer
             }
-
-            sensorManager.unregisterListener(acceleroLis)
-            sensorManager.unregisterListener(gyroLis)
-            sensorManager.unregisterListener(magneticLis)
-
-            resultReceiver.send(RESULT_CODE, bundle)
-        }).start()
+        }
 
         //return Service.START_REDELIVER_INTENT
         return START_NOT_STICKY

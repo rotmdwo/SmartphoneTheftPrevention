@@ -3,12 +3,14 @@ package edu.skku.cs.autosen
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.annotation.UiThread
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.database.DataSnapshot
@@ -19,10 +21,8 @@ import kotlinx.android.synthetic.main.activity_main.*
 
 import edu.skku.cs.autosen.sensor.MyReceiver
 import edu.skku.cs.autosen.sensor.SensorMeasurementService
-import edu.skku.cs.autosen.utility.removeDatabaseItem
 import java.util.*
 import kotlin.concurrent.timer
-import kotlin.concurrent.timerTask
 
 const val RESULT_CODE = 101
 
@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
 
     private val possibleTestIdSet = hashSetOf("sungjae","heidi","chettem","wiu",
     "seongjeong","youngoh", "youngoh_family1", "youngoh_family2","jinsol", "jinsol_family1",
-        "jinsol_family2", "hanjoon", "kan", "chanhee", "yewon", "fah", "namo")
+        "jinsol_family2", "hanjoon", "kan", "chanhee", "yewon", "fah", "other1", "other2", "other3")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +47,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        @RequiresApi(Build.VERSION_CODES.M)
         if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
             val intent = Intent()
             intent.setAction(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
@@ -86,7 +87,6 @@ class MainActivity : AppCompatActivity() {
 
                     override fun onDataChange(snapshot: DataSnapshot) {
                         val userIds = snapshot.children
-                        //var secsUploaded = 0
 
                         for (i in userIds) {
                             val id = i.key
@@ -111,9 +111,8 @@ class MainActivity : AppCompatActivity() {
                         // Start Service
                         val intent = Intent(baseContext, SensorMeasurementService::class.java)
                         intent.putExtra("receiver",receiver )
-                        //intent.putExtra("secsUploaded", secsUploaded)
-                        //startService(intent)
-                        startForegroundService(intent)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
+                        else startService(intent)
                     }
 
                 }
