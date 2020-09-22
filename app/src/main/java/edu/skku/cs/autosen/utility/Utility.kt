@@ -207,8 +207,8 @@ fun removeDatabaseItem(name1: String, name2: String? = null, name3: String? = nu
     reference?.ref.removeValue()
 }
 
-fun checkData(accelerometerData: ArrayList<ArrayList<FloatArray>>, magnetometerData: ArrayList<ArrayList<FloatArray>>,
-              gyroscopeData: ArrayList<ArrayList<FloatArray>>, SAMPLING_RATE: Int): Boolean {
+fun checkData(accelerometerData: Array<ArrayList<FloatArray>>, magnetometerData: Array<ArrayList<FloatArray>>,
+              gyroscopeData: Array<ArrayList<FloatArray>>, SAMPLING_RATE: Int): Boolean {
     var numOfTotalData = 0
     var numOfInactiveData = 0
 
@@ -228,7 +228,7 @@ fun checkData(accelerometerData: ArrayList<ArrayList<FloatArray>>, magnetometerD
     return true
 }
 
-fun normalizeData(data: ArrayList<ArrayList<FloatArray>>) {
+fun normalizeData(data: Array<ArrayList<FloatArray>>) {
     // 데이터의 Min, Max
     val maxX = findMax(data, 0)
     val minX = findMin(data, 0)
@@ -256,7 +256,7 @@ fun decreaseIndex(index: Int): Int {
 }
 
 // index 0: X, index 1: Y, index 2: Z
-fun findMax(data: ArrayList<ArrayList<FloatArray>>, index: Int): Float {
+fun findMax(data: Array<ArrayList<FloatArray>>, index: Int): Float {
     var max = Float.MIN_VALUE
 
     for (i in 0..4) {
@@ -268,7 +268,7 @@ fun findMax(data: ArrayList<ArrayList<FloatArray>>, index: Int): Float {
     return max
 }
 
-fun findMin(data: ArrayList<ArrayList<FloatArray>>, index: Int): Float {
+fun findMin(data: Array<ArrayList<FloatArray>>, index: Int): Float {
     var min = Float.MAX_VALUE
 
     for (i in 0..4) {
@@ -280,7 +280,7 @@ fun findMin(data: ArrayList<ArrayList<FloatArray>>, index: Int): Float {
     return min
 }
 
-fun sampleData(data: ArrayList<ArrayList<FloatArray>>, SAMPLING_RATE: Int): ArrayList<ArrayList<FloatArray>> {
+fun sampleData(data: Array<ArrayList<FloatArray>>, SAMPLING_RATE: Int): ArrayList<ArrayList<FloatArray>> {
     val sampledData = ArrayList<ArrayList<FloatArray>>(5)
     for (i in 0..4) sampledData.add(ArrayList())
 

@@ -43,6 +43,14 @@
                 android:layout_height="match_parent"
                 android:textSize="15dp"
                 android:textColor="#000000"/>
+
+            <Button
+                android:id="@+id/stopButton"
+                android:layout_gravity="center_horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Stop" />
+
         </LinearLayout>
     </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

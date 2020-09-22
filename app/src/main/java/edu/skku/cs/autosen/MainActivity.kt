@@ -11,7 +11,6 @@ import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.annotation.UiThread
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -31,11 +30,11 @@ class MainActivity : AppCompatActivity() {
         var LANGUAGE = "KOREAN"
         var userId = ""
         var secsUploaded = 0
+        var isStopped = false
     }
 
     private val possibleTestIdSet = hashSetOf("sungjae","heidi","chettem","wiu",
-    "seongjeong","youngoh", "youngoh_family1", "youngoh_family2","jinsol", "jinsol_family1",
-        "jinsol_family2", "hanjoon", "kan", "chanhee", "yewon", "fah", "other1", "other2", "other3")
+    "seongjeong","youngoh","jinsol", "hanjun", "kan", "chanhee", "yewon", "fah", "other1", "other2", "other3")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -109,6 +108,7 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         // Start Service
+                        isStopped = false
                         val intent = Intent(baseContext, SensorMeasurementService::class.java)
                         intent.putExtra("receiver",receiver )
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
@@ -121,9 +121,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        stopButton.setOnClickListener {
+            isStopped = true
+            button.isClickable = true
+        }
+
         timer(period = 1000L) {
             runOnUiThread {
-                if (secsUploaded != 0) button.isClickable = false
+                if (secsUploaded != 0 && !isStopped) button.isClickable = false
                 else button.isClickable = true
                 textView.text = "${secsUploaded} / 18000"
             }
