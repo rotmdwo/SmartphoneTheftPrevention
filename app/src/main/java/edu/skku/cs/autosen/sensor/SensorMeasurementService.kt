@@ -12,6 +12,7 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.*
+import android.util.Log
 import edu.skku.cs.autosen.MainActivity.Companion.LANGUAGE
 import edu.skku.cs.autosen.MainActivity.Companion.isStopped
 import edu.skku.cs.autosen.MainActivity.Companion.secsUploaded
@@ -118,6 +119,7 @@ class SensorMeasurementService : Service() {
 
             if (isStopped) {
                 stopService(intent)
+                sensorManager.unregisterListener(sensorListener)
                 return@timer
             }
 

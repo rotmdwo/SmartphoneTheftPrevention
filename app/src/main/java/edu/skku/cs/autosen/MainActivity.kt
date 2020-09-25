@@ -1,5 +1,6 @@
 package edu.skku.cs.autosen
 
+import kotlinx.coroutines.*
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -16,6 +17,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import edu.skku.cs.autosen.api.ServerApi
 import kotlinx.android.synthetic.main.activity_main.*
 
 import edu.skku.cs.autosen.sensor.MyReceiver

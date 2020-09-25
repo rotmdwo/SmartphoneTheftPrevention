@@ -2,9 +2,13 @@ package edu.skku.cs.autosen.utility
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.util.Log
 import android.widget.Toast
 import com.google.firebase.database.*
+import edu.skku.cs.autosen.Data
+import edu.skku.cs.autosen.api.ServerApi
 import edu.skku.cs.autosen.sensor.SensorMeasurementService
+import kotlinx.coroutines.runBlocking
 
 fun normalizeData(data: FloatArray, numOfData: IntArray, context: Context): Boolean {
     for (i in 0 until (numOfData.size - 1) / 5) {
@@ -296,8 +300,42 @@ fun sampleData(data: Array<ArrayList<FloatArray>>, SAMPLING_RATE: Int): ArrayLis
 
 fun uploadData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magnetometerData:  ArrayList<ArrayList<FloatArray>>,
                gyroscopeData:  ArrayList<ArrayList<FloatArray>>, userId: String, SAMPLING_RATE: Int, secsUploaded: Int) {
-    val totalData = HashMap<String, Any>()
+    val totalData = HashMap<String, HashMap<String, HashMap<String, Float>>>()
 
+    for (i in 0..4) {
+        val secondData = HashMap<String, HashMap<String, Float>>()
+
+        for (j in 0 until SAMPLING_RATE) {
+            val oneOver64HzData = HashMap<String, Float>()
+
+            oneOver64HzData.put("AccX", accelerometerData[i][j][0])
+            oneOver64HzData.put("AccY", accelerometerData[i][j][1])
+            oneOver64HzData.put("AccZ", accelerometerData[i][j][2])
+
+            oneOver64HzData.put("MagX", magnetometerData[i][j][0])
+            oneOver64HzData.put("MagY", magnetometerData[i][j][1])
+            oneOver64HzData.put("MagZ", magnetometerData[i][j][2])
+
+            oneOver64HzData.put("GyrX", gyroscopeData[i][j][0])
+            oneOver64HzData.put("GyrY", gyroscopeData[i][j][1])
+            oneOver64HzData.put("GyrZ", gyroscopeData[i][j][2])
+
+            secondData.put("data" + (j + 1) , oneOver64HzData)
+        }
+
+        totalData.put("sec" + (secsUploaded + i + 1), secondData)
+    }
+
+    val data = Data(userId, totalData)
+
+    runBlocking {
+        try {
+            val response = ServerApi.instance.sendData(data)
+        } catch (e: Exception) {
+            Log.e("asdf", "Hello API 호출 오류", e)
+        }
+    }
+    /*
     for (i in 0..4) {
         val secondData = HashMap<String, Any>()
 
@@ -329,6 +367,8 @@ fun uploadData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magnetomete
     idData.put(userId, secsUploaded + 5)
     reference = FirebaseDatabase.getInstance().getReference().child("Users")
     reference.updateChildren(idData)
+
+     */
 }
 
 
