@@ -10,10 +10,10 @@ interface ServerApi {
     @GET("/api/v1/hello")
     suspend fun hello(): ApiResponse<String>
 
-    @GET("/api/v1/annyeong")
-    suspend fun annyeong(): ApiResponse<String>
+    @POST("/api/v1/getSecs")
+    suspend fun getSecs(@Body userId: String): ApiResponse<String>
 
-    @POST("/api/v1/data")
+    @POST("/api/v1/saveData")
     suspend fun sendData(@Body data: Data): ApiResponse<String> // <T>는 서버로부터 응답메세지를 T 형태로 받는다는 거임
 
     companion object {

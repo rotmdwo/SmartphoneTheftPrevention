@@ -326,13 +326,13 @@ fun uploadData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magnetomete
         totalData.put("sec" + (secsUploaded + i + 1), secondData)
     }
 
-    val data = Data(userId, totalData)
+    val data = Data(userId, secsUploaded + 5, totalData)
 
     runBlocking {
         try {
             val response = ServerApi.instance.sendData(data)
         } catch (e: Exception) {
-            Log.e("asdf", "Hello API 호출 오류", e)
+            Log.e("asdf", "sendData API 호출 오류", e)
         }
     }
     /*

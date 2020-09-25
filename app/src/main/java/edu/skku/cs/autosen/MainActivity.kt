@@ -75,6 +75,37 @@ class MainActivity : AppCompatActivity() {
                 else Toast.makeText(applicationContext, "Not Allowed ID", Toast.LENGTH_SHORT).show()
                 button.isClickable = true
             } else {
+                runBlocking {
+                    try {
+                        val response = ServerApi.instance.getSecs(userId)
+                        if (response.data != null) {
+                            secsUploaded = response.data.toInt()
+                            textView.text = "${secsUploaded} / 18000"
+                        }
+                    } catch (e: Exception) {
+                        Log.e("asdf", "getSecs API 호출 오류", e)
+                        if (LANGUAGE == "KOREAN")
+                            Toast.makeText(applicationContext, "인터넷 연결 오류", Toast.LENGTH_LONG).show()
+                        else Toast.makeText(applicationContext, "Internet Access Error", Toast.LENGTH_LONG).show()
+                        button.isClickable = true
+                    }
+                }
+
+                if (secsUploaded >= 60 * 60 * 5) {
+                    if (LANGUAGE == "KOREAN")
+                        Toast.makeText(applicationContext, "이미 충분한 데이터가 등록되어 있습니다.", Toast.LENGTH_LONG).show()
+                    else Toast.makeText(applicationContext, "Enough data are already registered with your ID", Toast.LENGTH_LONG).show()
+                    button.isClickable = true
+                }
+
+                // Start Service
+                isStopped = false
+                val intent = Intent(baseContext, SensorMeasurementService::class.java)
+                intent.putExtra("receiver",receiver )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
+                else startService(intent)
+
+                /*
                 val reference = FirebaseDatabase.getInstance().getReference().child("Users")
                 val query = reference.orderByKey()
                 val singleValueEventListener = object : ValueEventListener {
@@ -120,6 +151,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 query.addListenerForSingleValueEvent(singleValueEventListener)
+                */
             }
         }
 
