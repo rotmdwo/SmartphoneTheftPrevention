@@ -14,6 +14,7 @@ import android.hardware.SensorManager
 import android.os.*
 import android.util.Log
 import edu.skku.cs.autosen.MainActivity.Companion.LANGUAGE
+import edu.skku.cs.autosen.MainActivity.Companion.isServiceDestroyed
 import edu.skku.cs.autosen.MainActivity.Companion.isStopped
 import edu.skku.cs.autosen.MainActivity.Companion.secsUploaded
 import edu.skku.cs.autosen.MainActivity.Companion.userId
@@ -121,11 +122,12 @@ class SensorMeasurementService : Service() {
             if (isStopped) {
                 stopService(intent)
                 sensorManager.unregisterListener(sensorListener)
-                return@timer
+                isServiceDestroyed = true
+                this.cancel()
             }
 
             timer(period = 100L) {
-                if (secsUploaded < 60 * 60 * 3) {
+                if (secsUploaded < 60 * 60 * 5) {
                     if (accelerometerData[5].size > 0 && !uploaded && checkInternetStatus(applicationContext)) {
                         sensorManager.unregisterListener(sensorListener)
 
@@ -148,6 +150,8 @@ class SensorMeasurementService : Service() {
                                 // timer안의 timer 명시적으로 종료하지 않으면 계속 살아있음
                                 this.cancel()
                             }
+                        } else {
+                            this.cancel()
                         }
                     }
                 } else {

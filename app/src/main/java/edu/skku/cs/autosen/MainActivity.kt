@@ -33,6 +33,7 @@ class MainActivity : AppCompatActivity() {
         var userId = ""
         var secsUploaded = 0
         var isStopped = false
+        var isServiceDestroyed =false
     }
 
     private val possibleTestIdSet = hashSetOf("sungjae","heidi","chettem","wiu",
@@ -61,6 +62,7 @@ class MainActivity : AppCompatActivity() {
 
         button.setOnClickListener {
             button.isClickable = false
+            isStopped = false
 
             userId = ID.text.toString()
 
@@ -99,7 +101,6 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 // Start Service
-                isStopped = false
                 val intent = Intent(baseContext, SensorMeasurementService::class.java)
                 intent.putExtra("receiver",receiver )
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
@@ -157,13 +158,14 @@ class MainActivity : AppCompatActivity() {
 
         stopButton.setOnClickListener {
             isStopped = true
-            button.isClickable = true
         }
 
         timer(period = 1000L) {
             runOnUiThread {
-                if (secsUploaded != 0 && !isStopped) button.isClickable = false
-                else button.isClickable = true
+                if (isServiceDestroyed) {
+                    isServiceDestroyed = false
+                    button.isClickable = true
+                }
                 textView.text = "${secsUploaded} / 18000"
             }
         }
