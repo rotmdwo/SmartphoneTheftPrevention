@@ -20,6 +20,7 @@ import edu.skku.cs.autosen.MainActivity.Companion.userId
 import edu.skku.cs.autosen.R
 import edu.skku.cs.autosen.RESULT_CODE
 import edu.skku.cs.autosen.utility.*
+import kotlin.collections.ArrayList
 import kotlin.concurrent.timer
 import kotlin.math.abs
 
@@ -143,6 +144,9 @@ class SensorMeasurementService : Service() {
                                 secsUploaded += 5
 
                                 uploaded = true
+
+                                // timer안의 timer 명시적으로 종료하지 않으면 계속 살아있음
+                                this.cancel()
                             }
                         }
                     }
