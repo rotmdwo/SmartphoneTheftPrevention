@@ -18,6 +18,8 @@ class ApiGenerator {
     }
 
     companion object {
-        const val HOST = "http://172.30.1.57:8080"
+        //const val HOST = "http://172.30.1.57:8080"
+        const val HOST = "http://220.79.132.56:8080" // 랜선
+        //const val HOST = "http://220.79.204.104:8080" // 공유기
     }
 }

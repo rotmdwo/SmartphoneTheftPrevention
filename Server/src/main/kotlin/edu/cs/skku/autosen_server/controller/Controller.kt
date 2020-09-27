@@ -32,6 +32,7 @@ class Controller {
         val data = incomingData.data
 
         val dataPath = "/Users/sungjaelee/Desktop/Android/SmartphoneTheftPrevention/data/user_data/" + userId + ".txt"
+        val dataPath2 = "/Users/sungjaelee/Desktop/Android/SmartphoneTheftPrevention/data/user_data/" + userId + "_2.txt"
         val secsPath = "/Users/sungjaelee/Desktop/Android/SmartphoneTheftPrevention/data/secs_data/" + userId + ".txt"
         var file = File(dataPath)
         if (!file.exists()) file.createNewFile()
@@ -53,6 +54,12 @@ class Controller {
                             "${oneOver64HzData["GyrX"]} ${oneOver64HzData["GyrY"]} ${oneOver64HzData["GyrZ"]}\n"
 
                     Files.write(Paths.get(dataPath), addedLine.toByteArray(), StandardOpenOption.APPEND)
+
+                    val addedLine2 = "${oneOver64HzData["AccX"]} ${oneOver64HzData["AccY"]} ${oneOver64HzData["AccZ"]} " +
+                            "${oneOver64HzData["MagX"]} ${oneOver64HzData["MagY"]} ${oneOver64HzData["MagZ"]} " +
+                            "${oneOver64HzData["GyrX"]} ${oneOver64HzData["GyrY"]} ${oneOver64HzData["GyrZ"]}\n"
+
+                    Files.write(Paths.get(dataPath2), addedLine2.toByteArray(), StandardOpenOption.APPEND)
                 }
             }
 
@@ -62,5 +69,16 @@ class Controller {
         }
 
         return ApiResponse.ok("Uploaded Successfully")
+    }
+
+
+    fun writeFloatToBinaryFile(dataPath: String, num: Float) {
+        val writer = DataOutputStream(BufferedOutputStream(FileOutputStream(dataPath, true)))
+        writer.writeFloat(num)
+    }
+
+    fun readFloatFromBinaryFile(dataPath: String): Float {
+        val reader = DataInputStream(FileInputStream(dataPath))
+        return reader.readFloat()
     }
 }
