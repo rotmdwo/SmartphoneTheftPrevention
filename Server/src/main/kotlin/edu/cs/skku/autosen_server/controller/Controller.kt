@@ -68,6 +68,18 @@ class Controller {
     fun writeFloatToBinaryFile(dataPath: String, num: Float) {
         val writer = DataOutputStream(BufferedOutputStream(FileOutputStream(dataPath, true)))
         writer.writeFloat(num)
+        writer.writeBytes(" ")
+        writer.close()
+    }
+
+    fun writeFloatToBinaryFile(dataPath: String, nums: FloatArray) {
+        val writer = DataOutputStream(BufferedOutputStream(FileOutputStream(dataPath, true)))
+        for (i in 0 until 9) {
+            writer.writeFloat(nums[i])
+            writer.writeBytes(" ")
+        }
+        writer.flush()
+        writer.close()
     }
 
     fun readFloatFromBinaryFile(dataPath: String): Float {
