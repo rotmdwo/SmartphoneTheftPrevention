@@ -82,10 +82,10 @@ class MainActivity : AppCompatActivity() {
                         val response = ServerApi.instance.getSecs(userId)
                         if (response.data != null) {
                             secsUploaded = response.data.toInt()
-                            textView.text = "${secsUploaded} / 18000"
+                            textView.text = "${secsUploaded} / 21600"
                         }
 
-                        if (secsUploaded >= 60 * 60 * 5) {
+                        if (secsUploaded >= 60 * 60 * 6) {
                             if (LANGUAGE == "KOREAN")
                                 Toast.makeText(applicationContext, "이미 충분한 데이터가 등록되어 있습니다.", Toast.LENGTH_LONG).show()
                             else Toast.makeText(applicationContext, "Enough data are already registered with your ID", Toast.LENGTH_LONG).show()

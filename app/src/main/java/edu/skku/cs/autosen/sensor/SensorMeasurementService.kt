@@ -13,6 +13,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.*
 import android.util.Log
+import android.widget.Toast
 import edu.skku.cs.autosen.MainActivity.Companion.LANGUAGE
 import edu.skku.cs.autosen.MainActivity.Companion.isServiceDestroyed
 import edu.skku.cs.autosen.MainActivity.Companion.isStopped
@@ -70,7 +71,7 @@ class SensorMeasurementService : Service() {
         val resultReceiver = intent!!.getParcelableExtra<ResultReceiver>("receiver")
         val bundle = Bundle()
 
-        timer(period = 6000L) {
+        timer(period = 5500L) {
             // 각 센서 데이터. FloatArray - index 0: X, index 1: Y, index 2: Z, index 3: Active/Inactive
             val accelerometerData = Array(6, {ArrayList<FloatArray>()})
             val magnetometerData = Array(6, {ArrayList<FloatArray>()})
@@ -115,9 +116,9 @@ class SensorMeasurementService : Service() {
 
             val sensorListener = SensorListener()
 
-            sensorManager.registerListener(sensorListener, acceleroSensor, 10000)
-            sensorManager.registerListener(sensorListener, magneticSensor, 10000)
-            sensorManager.registerListener(sensorListener, gyroSensor, 10000)
+            sensorManager.registerListener(sensorListener, acceleroSensor, 8000)
+            sensorManager.registerListener(sensorListener, magneticSensor, 8000)
+            sensorManager.registerListener(sensorListener, gyroSensor, 8000)
 
             if (isStopped) {
                 stopService(intent)
@@ -127,7 +128,7 @@ class SensorMeasurementService : Service() {
             }
 
             timer(period = 100L) {
-                if (secsUploaded < 60 * 60 * 5) {
+                if (secsUploaded < 60 * 60 * 6) {
                     if (accelerometerData[5].size > 0 && !uploaded && checkInternetStatus(applicationContext)) {
                         sensorManager.unregisterListener(sensorListener)
 
@@ -143,7 +144,6 @@ class SensorMeasurementService : Service() {
                             if (checkIfIdAvailable(userId, service)) {
                                 uploadData(sampledAccelerometerData, sampledMagnetometerData, sampledGyroscopeData,
                                     userId, SAMPLING_RATE, secsUploaded)
-                                secsUploaded += 5
 
                                 uploaded = true
 
@@ -155,9 +155,8 @@ class SensorMeasurementService : Service() {
                         }
                     }
                 } else {
-                    sensorManager.unregisterListener(sensorListener)
-
-                    resultReceiver.send(RESULT_CODE, bundle)
+                    isStopped = true
+                    Toast.makeText(service, "Data Retrieving Ended.", Toast.LENGTH_LONG).show()
                 }
             }
         }

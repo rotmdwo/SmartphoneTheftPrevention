@@ -14,7 +14,8 @@ class Controller {
     @PostMapping("/getSecs")
     fun getSecs(@RequestBody userId: String): ApiResponse {
         val id = userId.substring(1, userId.lastIndex)
-        val secsPath = "/Users/sungjaelee/Desktop/Android/SmartphoneTheftPrevention/data/secs_data/" + id + ".txt"
+        //val secsPath = "/Users/sungjaelee/Desktop/Android/SmartphoneTheftPrevention/data/secs_data/" + id + ".txt"
+        val secsPath = "D:/Android/AndroidStudioProjects/AUToSen/data/secs_data/" + id + ".txt"
         val file = File(secsPath)
         if (!file.exists()) {
             return ApiResponse.ok("0")
@@ -31,11 +32,13 @@ class Controller {
         val secs = incomingData.secs
         val data = incomingData.data
 
-        val dataPath = "/Users/sungjaelee/Desktop/Android/SmartphoneTheftPrevention/data/user_data/" + userId + ".txt"
-        val secsPath = "/Users/sungjaelee/Desktop/Android/SmartphoneTheftPrevention/data/secs_data/" + userId + ".txt"
-        var file = File(dataPath)
-        if (!file.exists()) file.createNewFile()
-        file = File(secsPath)
+        //val dataPath = "/Users/sungjaelee/Desktop/Android/SmartphoneTheftPrevention/data/user_data/" + userId + ".txt"
+        //val secsPath = "/Users/sungjaelee/Desktop/Android/SmartphoneTheftPrevention/data/secs_data/" + userId + ".txt"
+        val dataPath = "D:/Android/AndroidStudioProjects/AUToSen/data/user_data/" + userId + ".txt"
+        val secsPath = "D:/Android/AndroidStudioProjects/AUToSen/data/secs_data/" + userId + ".txt"
+        //var file = File(dataPath)
+        //if (!file.exists()) file.createNewFile()
+        val file = File(secsPath)
         if (!file.exists()) file.createNewFile()
 
 
@@ -48,11 +51,9 @@ class Controller {
 
                 while (secDataIterator.hasNext()) {
                     val oneOver64HzData = secDataIterator.next().value
-                    val addedLine = "${oneOver64HzData["AccX"]} ${oneOver64HzData["AccY"]} ${oneOver64HzData["AccZ"]} " +
-                            "${oneOver64HzData["MagX"]} ${oneOver64HzData["MagY"]} ${oneOver64HzData["MagZ"]} " +
-                            "${oneOver64HzData["GyrX"]} ${oneOver64HzData["GyrY"]} ${oneOver64HzData["GyrZ"]}\n"
+                    writeFloatToBinaryFile(dataPath, floatArrayOf(oneOver64HzData["AccX"]!!, oneOver64HzData["AccY"]!!, oneOver64HzData["AccZ"]!!,
+                        oneOver64HzData["MagX"]!!, oneOver64HzData["MagY"]!!, oneOver64HzData["MagZ"]!!, oneOver64HzData["GyrX"]!!, oneOver64HzData["GyrY"]!!, oneOver64HzData["GyrZ"]!!))
 
-                    Files.write(Paths.get(dataPath), addedLine.toByteArray(), StandardOpenOption.APPEND)
                 }
             }
 

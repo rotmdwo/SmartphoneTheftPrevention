@@ -6,6 +6,8 @@ import android.util.Log
 import android.widget.Toast
 import com.google.firebase.database.*
 import edu.skku.cs.autosen.Data
+import edu.skku.cs.autosen.MainActivity
+import edu.skku.cs.autosen.MainActivity.Companion.isStopped
 import edu.skku.cs.autosen.api.ServerApi
 import edu.skku.cs.autosen.sensor.SensorMeasurementService
 import kotlinx.coroutines.runBlocking
@@ -331,6 +333,12 @@ fun uploadData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magnetomete
     runBlocking {
         try {
             val response = ServerApi.instance.sendData(data)
+
+            if (response.data.equals("Uploaded Successfully")) {
+                MainActivity.secsUploaded += 5
+            } else {
+
+            }
         } catch (e: Exception) {
             Log.e("asdf", "sendData API 호출 오류", e)
         }

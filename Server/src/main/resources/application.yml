@@ -11,4 +11,5 @@ spring:
       ddl-auto: update
     database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
 server:
-  port: 8080 # port 설정방법. 기본포트: 8080
+  port: 8080 # PC /// port 설정방법. 기본포트: 8080
+  #port: 80 # Macbook

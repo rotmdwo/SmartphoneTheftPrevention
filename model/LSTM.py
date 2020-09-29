@@ -98,8 +98,8 @@ model.compile(loss= 'mse', optimizer= 'rmsprop')
 with tf.device('/device:CPU:0'):
     model.fit(np.array(X_train), np.array(y_train), batch_size= 128, epochs=epochs, validation_split= 0.05)
 
-print(model.output.op.name)
-print(model.input.op.name)
+#print(model.output.op.name)
+#print(model.input.op.name)
 
 #model.save(tf.compat.v1.Session(), '/tmp/keras_' + user_id + '.ckpt')
 #saver = tf.compat.v1.train.Saver()
@@ -134,7 +134,7 @@ correctRatio = (truePositive + trueNegative) * 100 / total
 far = falsePositive * 100 / total
 frr = falseNegative * 100 / total
 
-model.save('d:\\Android\\AndroidStudioProjects\\AUToSen\\model\\keras_' + user_id + '_' + str(epochs) +'_' + str(far) + '_' + str(frr) + '.ckpt')
+#model.save('d:\\Android\\AndroidStudioProjects\\AUToSen\\model\\keras_' + user_id + '_' + str(epochs) +'_' + str(far) + '_' + str(frr) + '.ckpt')
 
 ys = [correctRatio, far, frr]
 label = ["Correct", "FAR", "FRR"]
