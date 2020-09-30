@@ -16,6 +16,9 @@ interface ServerApi {
     @POST("/api/v1/saveData")
     suspend fun sendData(@Body data: Data): ApiResponse<String> // <T>는 서버로부터 응답메세지를 T 형태로 받는다는 거임
 
+    @POST("/api/v1/predict")
+    suspend fun predict(@Body data: Data): ApiResponse<String>
+
     companion object {
         val instance = ApiGenerator().generate(ServerApi::class.java)
     }

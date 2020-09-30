@@ -1,5 +1,6 @@
 package edu.skku.cs.autosen.utility
 
+import android.app.Service
 import android.content.Context
 import android.net.ConnectivityManager
 import android.util.Log
@@ -7,6 +8,7 @@ import android.widget.Toast
 import com.google.firebase.database.*
 import edu.skku.cs.autosen.Data
 import edu.skku.cs.autosen.MainActivity
+import edu.skku.cs.autosen.MainActivity.Companion.authentication
 import edu.skku.cs.autosen.MainActivity.Companion.isStopped
 import edu.skku.cs.autosen.api.ServerApi
 import edu.skku.cs.autosen.sensor.SensorMeasurementService
@@ -300,6 +302,54 @@ fun sampleData(data: Array<ArrayList<FloatArray>>, SAMPLING_RATE: Int): ArrayLis
     return sampledData
 }
 
+fun authenticateData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magnetometerData:  ArrayList<ArrayList<FloatArray>>,
+    gyroscopeData:  ArrayList<ArrayList<FloatArray>>, userId: String, SAMPLING_RATE: Int) {
+    val totalData = HashMap<String, HashMap<String, HashMap<String, Float>>>()
+
+    for (i in 0 until 1) {
+        val secondData = HashMap<String, HashMap<String, Float>>()
+
+        for (j in 0 until SAMPLING_RATE) {
+            val oneOver64HzData = HashMap<String, Float>()
+
+            oneOver64HzData.put("AccX", accelerometerData[i][j][0])
+            oneOver64HzData.put("AccY", accelerometerData[i][j][1])
+            oneOver64HzData.put("AccZ", accelerometerData[i][j][2])
+
+            oneOver64HzData.put("MagX", magnetometerData[i][j][0])
+            oneOver64HzData.put("MagY", magnetometerData[i][j][1])
+            oneOver64HzData.put("MagZ", magnetometerData[i][j][2])
+
+            oneOver64HzData.put("GyrX", gyroscopeData[i][j][0])
+            oneOver64HzData.put("GyrY", gyroscopeData[i][j][1])
+            oneOver64HzData.put("GyrZ", gyroscopeData[i][j][2])
+
+            secondData.put("data" + (j + 1) , oneOver64HzData)
+        }
+
+        totalData.put("sec" + i, secondData)
+    }
+
+    val data = Data(userId, 0, totalData)
+
+    runBlocking {
+        try {
+            val response = ServerApi.instance.predict(data).data
+
+            if (response.equals("true")) {
+                authentication = "true " + System.currentTimeMillis()
+            } else if (response.equals("false")) {
+                authentication = "false " + System.currentTimeMillis()
+            } else {
+                authentication = "error " + System.currentTimeMillis()
+            }
+        } catch (e: Exception) {
+            Log.e("asdf", "sendData API 호출 오류", e)
+        }
+    }
+}
+
+
 fun uploadData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magnetometerData:  ArrayList<ArrayList<FloatArray>>,
                gyroscopeData:  ArrayList<ArrayList<FloatArray>>, userId: String, SAMPLING_RATE: Int, secsUploaded: Int) {
     val totalData = HashMap<String, HashMap<String, HashMap<String, Float>>>()
@@ -396,7 +446,7 @@ fun checkInternetStatus(context: Context): Boolean {
 }
 
 // 앱 재시작으로 인해 ID가 null이 아닌지 확인
-fun checkIfIdAvailable(userId: String, service: SensorMeasurementService): Boolean {
+fun checkIfIdAvailable(userId: String, service: Service): Boolean {
     if (userId == "") {
         service.stopForeground(true)
         service.stopSelf()

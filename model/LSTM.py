@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import DataIO
 from tensorflow.python.client import device_lib
 
-epochs = 10
+epochs = 20
 num_neurons = 100
 seq_len = 64    # 64Hz의 센서 데이터 이용
 sample_len = 9 # 센서데이터 9개
@@ -95,16 +95,17 @@ model.add(Dense(units= pred_len))
 model.add(Activation('linear'))
 model.compile(loss= 'mse', optimizer= 'rmsprop')
 
-with tf.device('/device:CPU:0'):
-    model.fit(np.array(X_train), np.array(y_train), batch_size= 128, epochs=epochs, validation_split= 0.05)
+#with tf.device('/device:CPU:0'):
+model.fit(np.array(X_train), np.array(y_train), batch_size= 1024, epochs=epochs, validation_split= 0.05)
 
+model.save(user_id + ".h5")
 #print(model.output.op.name)
 #print(model.input.op.name)
 
 #model.save(tf.compat.v1.Session(), '/tmp/keras_' + user_id + '.ckpt')
 #saver = tf.compat.v1.train.Saver()
 #saver.save(K.get_session(), '/tmp/keras_' + user_id + '.ckpt')
-
+'''
 # 테스트 값 예측
 predictions = []
 total = len(X_test)
@@ -144,3 +145,4 @@ plt.ylabel("Ratio")
 plt.show()
 
 print("FAR: %f, FRR: %f" %(far, frr))
+'''

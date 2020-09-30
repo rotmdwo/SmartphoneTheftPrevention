@@ -4,6 +4,7 @@ import edu.cs.skku.autosen_server.Data
 import edu.cs.skku.autosen_server.common.ApiResponse
 import org.springframework.web.bind.annotation.*
 import java.io.*
+import java.lang.StringBuilder
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
@@ -65,11 +66,68 @@ class Controller {
         return ApiResponse.ok("Uploaded Successfully")
     }
 
+    @PostMapping("/predict")
+    fun predict(@RequestBody incomingData: Data): ApiResponse {
+        val userId = incomingData.userId
+        val data = incomingData.data
+        val dataArray = ArrayList<Float>(9 * 64 * 1)
 
-    fun writeFloatToBinaryFile(dataPath: String, num: Float) {
-        val writer = DataOutputStream(BufferedOutputStream(FileOutputStream(dataPath, true)))
-        writer.writeFloat(num)
-        writer.close()
+        val fiveSecsDataIterator = data.iterator()
+
+        while (fiveSecsDataIterator.hasNext()) {
+            val secData = fiveSecsDataIterator.next().value
+            val secDataIterator = secData.iterator()
+
+            while (secDataIterator.hasNext()) {
+                val oneOver64HzData = secDataIterator.next().value
+                dataArray.add(oneOver64HzData["AccX"]!!)
+                dataArray.add(oneOver64HzData["AccY"]!!)
+                dataArray.add(oneOver64HzData["AccZ"]!!)
+                dataArray.add(oneOver64HzData["MagX"]!!)
+                dataArray.add(oneOver64HzData["MagY"]!!)
+                dataArray.add(oneOver64HzData["MagZ"]!!)
+                dataArray.add(oneOver64HzData["GyrX"]!!)
+                dataArray.add(oneOver64HzData["GyrY"]!!)
+                dataArray.add(oneOver64HzData["GyrZ"]!!)
+            }
+        }
+
+        for (i in 0 until 576) println(dataArray[i])
+        val runtime = Runtime.getRuntime()
+        var stringBuilder = StringBuilder("python D:/Android/AndroidStudioProjects/AUToSen/model/LoadModel.py")
+
+        for (i in 0 until 1) {
+            for (j in 0 until 64) {
+                for (k in 0 until 9) {
+                    stringBuilder.append(" ${dataArray[k + j * 9 + i * 9 * 64]}")
+                }
+            }
+        }
+
+        println("predict 시작")
+
+        stringBuilder.append(" ${userId}")
+        val command = stringBuilder.toString()
+        val process = runtime.exec(command)
+
+        val br = BufferedReader(InputStreamReader(process.inputStream))
+        var textFromPython = br.readLine()
+
+        println(textFromPython)
+        textFromPython = br.readLine()
+
+        process.waitFor()
+        process.destroy()
+
+        if (textFromPython != null) {
+            if (textFromPython.equals("true")) {
+                return ApiResponse.ok("true")
+            } else {
+                return ApiResponse.ok("false")
+            }
+        } else {
+            return ApiResponse.ok("error")
+        }
     }
 
     fun writeFloatToBinaryFile(dataPath: String, nums: FloatArray) {

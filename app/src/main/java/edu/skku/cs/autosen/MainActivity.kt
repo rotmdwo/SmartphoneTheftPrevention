@@ -18,6 +18,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import edu.skku.cs.autosen.api.ServerApi
+import edu.skku.cs.autosen.sensor.AuthenticationService
 import kotlinx.android.synthetic.main.activity_main.*
 
 import edu.skku.cs.autosen.sensor.MyReceiver
@@ -34,6 +35,7 @@ class MainActivity : AppCompatActivity() {
         var secsUploaded = 0
         var isStopped = false
         var isServiceDestroyed =false
+        var authentication = ""
     }
 
     private val possibleTestIdSet = hashSetOf("sungjae","heidi","chettem","wiu",
@@ -160,13 +162,31 @@ class MainActivity : AppCompatActivity() {
             isStopped = true
         }
 
+        predictButton.setOnClickListener {
+            button.isClickable = false
+            userId = ID.text.toString()
+            if (userId.equals("sungjae")) {
+                // Start Service
+                val intent = Intent(baseContext, AuthenticationService::class.java)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
+                else startService(intent)
+            }
+            button.isClickable = true
+        }
+
+        timer(period = 1000L) {
+            runOnUiThread {
+                predictText.text = authentication
+            }
+        }
+
         timer(period = 1000L) {
             runOnUiThread {
                 if (isServiceDestroyed) {
                     isServiceDestroyed = false
                     button.isClickable = true
                 }
-                textView.text = "${secsUploaded} / 18000"
+                textView.text = "${secsUploaded} / 21600"
             }
         }
     }
