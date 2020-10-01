@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import DataIO
 from tensorflow.python.client import device_lib
 
-epochs = 20
+epochs = 40
 num_neurons = 100
 seq_len = 64    # 64Hz의 센서 데이터 이용
 sample_len = 9 # 센서데이터 9개
@@ -25,7 +25,7 @@ def load_data(user_id: str, pred_len: int):
 
     result = [] # 9개의 센서 데이터와 주인 여부를 1초 단위로 묶은 것 => 3차원 배열
 
-    DataIO.read_data("../data/user_data/sungjae.txt", result, 18000, True)
+    DataIO.read_data("../data/user_data/sungjae.txt", result, 19045, True)
     DataIO.read_data("../data/user_data/chettem.txt", result, 5055, False)
     DataIO.read_data("../data/user_data/hanjun.txt", result, 10800, False)
     DataIO.read_data("../data/user_data/jinsol.txt", result, 2825, False)
@@ -95,8 +95,9 @@ model.add(Dense(units= pred_len))
 model.add(Activation('linear'))
 model.compile(loss= 'mse', optimizer= 'rmsprop')
 
+class_weight = {1: 0.67, 0: 0.33}
 #with tf.device('/device:CPU:0'):
-model.fit(np.array(X_train), np.array(y_train), batch_size= 1024, epochs=epochs, validation_split= 0.05)
+model.fit(np.array(X_train), np.array(y_train), batch_size= 1024, epochs=epochs, validation_split= 0.05, class_weight=class_weight)
 
 model.save(user_id + ".h5")
 #print(model.output.op.name)
@@ -105,7 +106,9 @@ model.save(user_id + ".h5")
 #model.save(tf.compat.v1.Session(), '/tmp/keras_' + user_id + '.ckpt')
 #saver = tf.compat.v1.train.Saver()
 #saver.save(K.get_session(), '/tmp/keras_' + user_id + '.ckpt')
-'''
+
+#model.evaluate(np.array(X_test), np.array(y_test), batch_size=1024)
+
 # 테스트 값 예측
 predictions = []
 total = len(X_test)
@@ -145,4 +148,3 @@ plt.ylabel("Ratio")
 plt.show()
 
 print("FAR: %f, FRR: %f" %(far, frr))
-'''

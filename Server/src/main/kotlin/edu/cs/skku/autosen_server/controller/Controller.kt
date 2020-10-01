@@ -92,7 +92,6 @@ class Controller {
             }
         }
 
-        for (i in 0 until 576) println(dataArray[i])
         val runtime = Runtime.getRuntime()
         var stringBuilder = StringBuilder("python D:/Android/AndroidStudioProjects/AUToSen/model/LoadModel.py")
 
