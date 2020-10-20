@@ -1,9 +1,10 @@
 package edu.skku.cs.autosen.utility
 
-import android.app.Activity
-import android.app.Service
+import android.app.*
 import android.content.Context
+import android.graphics.Color
 import android.net.ConnectivityManager
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import com.google.firebase.database.DatabaseReference
@@ -11,6 +12,7 @@ import com.google.firebase.database.FirebaseDatabase
 import edu.skku.cs.autosen.Data
 import edu.skku.cs.autosen.MainActivity
 import edu.skku.cs.autosen.MainActivity.Companion.authentication
+import edu.skku.cs.autosen.R
 import edu.skku.cs.autosen.api.ServerApi
 import kotlinx.coroutines.runBlocking
 
