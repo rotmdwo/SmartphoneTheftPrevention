@@ -1,18 +1,19 @@
 package edu.skku.cs.autosen.utility
 
+import android.app.Activity
 import android.app.Service
 import android.content.Context
 import android.net.ConnectivityManager
 import android.util.Log
 import android.widget.Toast
-import com.google.firebase.database.*
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 import edu.skku.cs.autosen.Data
 import edu.skku.cs.autosen.MainActivity
 import edu.skku.cs.autosen.MainActivity.Companion.authentication
-import edu.skku.cs.autosen.MainActivity.Companion.isStopped
 import edu.skku.cs.autosen.api.ServerApi
-import edu.skku.cs.autosen.sensor.SensorMeasurementService
 import kotlinx.coroutines.runBlocking
+
 
 fun normalizeData(data: FloatArray, numOfData: IntArray, context: Context): Boolean {
     for (i in 0 until (numOfData.size - 1) / 5) {
@@ -466,6 +467,21 @@ fun checkIfRestedForLong(accelerometerData: ArrayList<ArrayList<FloatArray>>, ma
     }
 
     return previousTime
+}
+
+fun saveID(id: String, context: Context) {
+    val pref = context.getSharedPreferences("id", Activity.MODE_PRIVATE)
+    val editor = pref.edit()
+    editor.clear()
+    editor.putString("id", id)
+    editor.commit()
+}
+
+fun loadID(context: Context): String {
+    val pref = context.getSharedPreferences("id", Activity.MODE_PRIVATE)
+    val id = pref.getString("id", "")
+    if (id != null) return id
+    else return ""
 }
 
 class Utility {

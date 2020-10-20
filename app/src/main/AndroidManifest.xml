@@ -3,7 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="edu.skku.cs.autosen">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
@@ -15,21 +18,24 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
-        <service
-            android:name=".sensor.SensorMeasurementService"
-            android:enabled="true"
-            android:exported="true"></service>
-        <service
-            android:name=".sensor.AuthenticationService"
-            android:enabled="true"
-            android:exported="true"></service>
-
-        <activity android:name=".MainActivity">
+        <activity android:name=".login.LoginActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <service
+            android:name=".sensor.SensorMeasurementService"
+            android:enabled="true"
+            android:exported="true" />
+        <service
+            android:name=".sensor.AuthenticationService"
+            android:enabled="true"
+            android:exported="true" />
+
+        <activity android:name=".MainActivity">
         </activity>
     </application>
 

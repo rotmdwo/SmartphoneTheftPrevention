@@ -3,6 +3,10 @@ package edu.skku.cs.autosen
 import kotlinx.coroutines.*
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -13,18 +17,20 @@ import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
 import edu.skku.cs.autosen.api.ServerApi
+import edu.skku.cs.autosen.login.LoginActivity
 import edu.skku.cs.autosen.sensor.AuthenticationService
 import kotlinx.android.synthetic.main.activity_main.*
 
 import edu.skku.cs.autosen.sensor.MyReceiver
 import edu.skku.cs.autosen.sensor.SensorMeasurementService
+import edu.skku.cs.autosen.utility.loadID
+import edu.skku.cs.autosen.utility.saveID
 import java.util.*
 import kotlin.concurrent.timer
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
+import java.util.concurrent.Executor
 
 const val RESULT_CODE = 101
 
@@ -36,6 +42,11 @@ class MainActivity : AppCompatActivity() {
         var isStopped = false
         var isServiceDestroyed =false
         var authentication = ""
+
+        lateinit var executer: Executor
+        lateinit var biometricPrompt: BiometricPrompt
+        lateinit var promptInfo: BiometricPrompt.PromptInfo
+        lateinit var camera: android.hardware.Camera
     }
 
     private val possibleTestIdSet = hashSetOf("sungjae","heidi","chettem","wiu",
@@ -50,6 +61,13 @@ class MainActivity : AppCompatActivity() {
             button.text = "Start"
         }
 
+        //userId = ID.text.toString()
+        userId = loadID(applicationContext)
+
+        if (LANGUAGE == "KOREAN") {
+            infoText.text = "어서오세요, ${userId}님!"
+        } else infoText.text = "Welcome, ${userId}!"
+
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         @RequiresApi(Build.VERSION_CODES.M)
         if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
@@ -59,19 +77,24 @@ class MainActivity : AppCompatActivity() {
             startActivityForResult(intent, 0)
         }
 
-        val receiver = MyReceiver(Handler())
-        receiver.setReceiver(obj)
+        logoutButton.setOnClickListener {
+            isStopped = true
+            saveID("", applicationContext)
+            val intent = Intent(baseContext, LoginActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
 
         button.setOnClickListener {
             button.isClickable = false
             isStopped = false
 
-            userId = ID.text.toString()
-
             if (userId.equals("")) {
                 if (LANGUAGE == "KOREAN")
-                    Toast.makeText(applicationContext, "ID를 입력해주세요.", Toast.LENGTH_SHORT).show()
-                else Toast.makeText(applicationContext, "Please enter ID.", Toast.LENGTH_SHORT).show()
+                    //Toast.makeText(applicationContext, "ID를 입력해주세요.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(applicationContext, "ID 불러오기에 문제가 생겼습니다. 로그아웃 후 재접속해주세요.", Toast.LENGTH_SHORT).show()
+                //else Toast.makeText(applicationContext, "Please enter ID.", Toast.LENGTH_SHORT).show()
+                else Toast.makeText(applicationContext, "An error occured with ID. Please sign in again.", Toast.LENGTH_SHORT).show()
                 button.isClickable = true
             } else if (!possibleTestIdSet.contains(userId)) {
                 if (LANGUAGE == "KOREAN")
@@ -96,7 +119,7 @@ class MainActivity : AppCompatActivity() {
 
                         // Start Service
                         val intent = Intent(baseContext, SensorMeasurementService::class.java)
-                        intent.putExtra("receiver",receiver )
+                        //intent.putExtra("receiver",receiver )
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
                         else startService(intent)
                     } catch (e: Exception) {
@@ -107,54 +130,6 @@ class MainActivity : AppCompatActivity() {
                         button.isClickable = true
                     }
                 }
-
-                /*
-                val reference = FirebaseDatabase.getInstance().getReference().child("Users")
-                val query = reference.orderByKey()
-                val singleValueEventListener = object : ValueEventListener {
-                    override fun onCancelled(error: DatabaseError) {
-                        Log.e("asdf", "checkIdIfDuplicated 메서드 오류")
-                        if (LANGUAGE == "KOREAN")
-                            Toast.makeText(applicationContext, "인터넷 연결 오류", Toast.LENGTH_LONG).show()
-                        else Toast.makeText(applicationContext, "Internet Access Error", Toast.LENGTH_LONG).show()
-                        button.isClickable = true
-                    }
-
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        val userIds = snapshot.children
-
-                        for (i in userIds) {
-                            val id = i.key
-
-                            if (userId.equals(id)) {
-                                secsUploaded = (i.value as Long).toInt()
-                                textView.text = "${secsUploaded} / 18000"
-
-                                if (secsUploaded >= 60 * 60 * 5) {
-                                    if (LANGUAGE == "KOREAN")
-                                        Toast.makeText(applicationContext, "이미 충분한 데이터가 등록되어 있습니다.", Toast.LENGTH_LONG).show()
-                                    else Toast.makeText(applicationContext, "Enough data are already registered with your ID", Toast.LENGTH_LONG).show()
-                                    button.isClickable = true
-
-                                    return
-                                } else {
-                                    break
-                                }
-                            }
-                        }
-
-                        // Start Service
-                        isStopped = false
-                        val intent = Intent(baseContext, SensorMeasurementService::class.java)
-                        intent.putExtra("receiver",receiver )
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
-                        else startService(intent)
-                    }
-
-                }
-
-                query.addListenerForSingleValueEvent(singleValueEventListener)
-                */
             }
         }
 
@@ -162,21 +137,70 @@ class MainActivity : AppCompatActivity() {
             isStopped = true
         }
 
+
+
+        // Biometric Authentication
+        executer = ContextCompat.getMainExecutor(applicationContext)
+        biometricPrompt = BiometricPrompt(this, executer, object: BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationError(errorCode: Int,
+                                               errString: CharSequence) {
+                super.onAuthenticationError(errorCode, errString)
+                Toast.makeText(applicationContext,
+                    "Authentication error: $errString", Toast.LENGTH_SHORT)
+                    .show()
+            }
+
+            override fun onAuthenticationSucceeded(
+                result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                Toast.makeText(applicationContext,
+                    "Authentication succeeded!", Toast.LENGTH_SHORT)
+                    .show()
+            }
+
+            override fun onAuthenticationFailed() {
+                super.onAuthenticationFailed()
+                Toast.makeText(applicationContext, "Authentication failed",
+                    Toast.LENGTH_SHORT)
+                    .show()
+            }
+        })
+        promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("생체인증 필요")
+            .setSubtitle("비정상적인 사용을 감지했습니다")
+            //.setNegativeButtonText("cancel")
+            .setDeviceCredentialAllowed(true)
+            .build()
+        //biometricPrompt.authenticate(promptInfo)
+
+
+        val receiver = MyReceiver(Handler())
+        receiver.setReceiver(obj)
+
         predictButton.setOnClickListener {
+
             button.isClickable = false
-            userId = ID.text.toString()
+            //userId = ID.text.toString()
             if (userId.equals("sungjae")) {
                 // Start Service
                 val intent = Intent(baseContext, AuthenticationService::class.java)
+                intent.putExtra("receiver",receiver )
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
                 else startService(intent)
             }
             button.isClickable = true
+
+
+
+
+
         }
 
         timer(period = 1000L) {
             runOnUiThread {
-                predictText.text = authentication
+                //predictText.text = authentication
+
+
             }
         }
 
@@ -186,7 +210,7 @@ class MainActivity : AppCompatActivity() {
                     isServiceDestroyed = false
                     button.isClickable = true
                 }
-                textView.text = "${secsUploaded} / 21600"
+                textView.text = "현재까지 수집한 데이터: ${secsUploaded} / 21600"
             }
         }
     }
@@ -194,8 +218,16 @@ class MainActivity : AppCompatActivity() {
     private val obj = object: MyReceiver.Receiver {
         override fun onReceiverResult(resultCode: Int, resultData: Bundle){
             if (resultCode == RESULT_CODE) {
+                val data = resultData.getByteArray("pic")
+                if (data != null) {
+                    val bitmap = BitmapFactory.decodeByteArray(data, 0, data.size)
+                    val matrix = Matrix()
+                    matrix.setRotate(270.0f, (bitmap.width / 2).toFloat(), (bitmap.height / 2).toFloat())
 
-                button.isClickable = true
+                    val converted = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+                    imageView.setImageBitmap(converted)
+                }
+
             }
         }
     }

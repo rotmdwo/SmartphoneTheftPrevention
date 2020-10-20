@@ -6,15 +6,19 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
+import android.graphics.SurfaceTexture
+import android.hardware.*
 import android.os.*
 import android.util.Log
+import android.view.Surface
 import android.widget.Toast
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
+import edu.skku.cs.autosen.MainActivity
 import edu.skku.cs.autosen.MainActivity.Companion.LANGUAGE
+import edu.skku.cs.autosen.MainActivity.Companion.camera
 import edu.skku.cs.autosen.MainActivity.Companion.isServiceDestroyed
 import edu.skku.cs.autosen.MainActivity.Companion.isStopped
 import edu.skku.cs.autosen.MainActivity.Companion.secsUploaded
@@ -22,6 +26,7 @@ import edu.skku.cs.autosen.MainActivity.Companion.userId
 import edu.skku.cs.autosen.R
 import edu.skku.cs.autosen.RESULT_CODE
 import edu.skku.cs.autosen.utility.*
+import kotlinx.android.synthetic.main.activity_main.*
 import kotlin.collections.ArrayList
 import kotlin.concurrent.timer
 import kotlin.math.abs
@@ -62,14 +67,13 @@ class SensorMeasurementService : Service() {
             startForeground(NOTIFICATION_ID, notification)
         }
 
+
+
         // Sensors
         val sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val acceleroSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         val gyroSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
         val magneticSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
-
-        val resultReceiver = intent!!.getParcelableExtra<ResultReceiver>("receiver")
-        val bundle = Bundle()
 
         timer(period = 5500L) {
             // 각 센서 데이터. FloatArray - index 0: X, index 1: Y, index 2: Z, index 3: Active/Inactive
