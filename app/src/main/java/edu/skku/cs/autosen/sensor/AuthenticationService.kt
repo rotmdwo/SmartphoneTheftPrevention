@@ -21,6 +21,7 @@ import edu.skku.cs.autosen.MainActivity.Companion.pic
 import edu.skku.cs.autosen.MainActivity.Companion.picByteArray
 import edu.skku.cs.autosen.R
 import edu.skku.cs.autosen.utility.*
+import kotlinx.coroutines.runBlocking
 import kotlin.concurrent.timer
 import kotlin.math.abs
 
@@ -76,7 +77,7 @@ class AuthenticationService : Service() {
                 isPredictionServiceDestroyed = true
                 this.cancel()
             }
-
+            /*
             val surfaceTexture = SurfaceTexture(10)
             MainActivity.camera = Camera.open(1)
             MainActivity.camera.parameters.setPreviewSize(1,1)
@@ -135,6 +136,8 @@ class AuthenticationService : Service() {
 
 
             })
+
+             */
 
             // 각 센서 데이터. FloatArray - index 0: X, index 1: Y, index 2: Z, index 3: Active/Inactive
             val accelerometerData = Array(6, {ArrayList<FloatArray>()})
@@ -214,8 +217,9 @@ class AuthenticationService : Service() {
                             val sampledGyroscopeData = sampleData(gyroscopeData, SAMPLING_RATE)
 
                             if (checkIfIdAvailable(MainActivity.userId, service)) {
+                                val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                                 authenticateData(sampledAccelerometerData, sampledMagnetometerData, sampledGyroscopeData,
-                                    MainActivity.userId, SAMPLING_RATE)
+                                    MainActivity.userId, SAMPLING_RATE, applicationContext, notificationManager)
 
                                 uploaded = true
 

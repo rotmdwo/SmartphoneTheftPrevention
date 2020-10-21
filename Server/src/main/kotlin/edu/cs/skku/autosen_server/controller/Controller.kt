@@ -75,7 +75,8 @@ class Controller {
     fun predict(@RequestBody incomingSensorData: SensorData): ApiResponse {
         val userId = incomingSensorData.userId
         val data = incomingSensorData.data
-        val dataArray = ArrayList<Float>(9 * 64 * 1)
+        val dataPath = "D:/Android/AndroidStudioProjects/AUToSen/model/temp.txt"
+        val writer = DataOutputStream(BufferedOutputStream(FileOutputStream(dataPath)))
 
         val fiveSecsDataIterator = data.iterator()
 
@@ -85,40 +86,31 @@ class Controller {
 
             while (secDataIterator.hasNext()) {
                 val oneOver64HzData = secDataIterator.next().value
-                dataArray.add(oneOver64HzData["AccX"]!!)
-                dataArray.add(oneOver64HzData["AccY"]!!)
-                dataArray.add(oneOver64HzData["AccZ"]!!)
-                dataArray.add(oneOver64HzData["MagX"]!!)
-                dataArray.add(oneOver64HzData["MagY"]!!)
-                dataArray.add(oneOver64HzData["MagZ"]!!)
-                dataArray.add(oneOver64HzData["GyrX"]!!)
-                dataArray.add(oneOver64HzData["GyrY"]!!)
-                dataArray.add(oneOver64HzData["GyrZ"]!!)
+                writer.writeFloat(oneOver64HzData["AccX"]!!)
+                writer.writeFloat(oneOver64HzData["AccY"]!!)
+                writer.writeFloat(oneOver64HzData["AccZ"]!!)
+                writer.writeFloat(oneOver64HzData["MagX"]!!)
+                writer.writeFloat(oneOver64HzData["MagY"]!!)
+                writer.writeFloat(oneOver64HzData["MagZ"]!!)
+                writer.writeFloat(oneOver64HzData["GyrX"]!!)
+                writer.writeFloat(oneOver64HzData["GyrY"]!!)
+                writer.writeFloat(oneOver64HzData["GyrZ"]!!)
             }
         }
+
+        writer.flush()
+        writer.close()
+
+        println("predict 시작 $userId")
 
         val runtime = Runtime.getRuntime()
-        val stringBuilder = StringBuilder("python D:/Android/AndroidStudioProjects/AUToSen/model/LoadModel.py")
-
-        for (i in 0 until 1) {
-            for (j in 0 until 64) {
-                for (k in 0 until 9) {
-                    stringBuilder.append(" ${dataArray[k + j * 9 + i * 9 * 64]}")
-                }
-            }
-        }
-
-        println("predict 시작")
-
-        stringBuilder.append(" ${userId}")
-        val command = stringBuilder.toString()
+        val command = "python D:/Android/AndroidStudioProjects/AUToSen/model/LoadModel.py $userId"
         val process = runtime.exec(command)
 
         val br = BufferedReader(InputStreamReader(process.inputStream))
         var textFromPython = br.readLine()
 
         println(textFromPython)
-        textFromPython = br.readLine()
 
         process.waitFor()
         process.destroy()
