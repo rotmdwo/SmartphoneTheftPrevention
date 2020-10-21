@@ -13,19 +13,28 @@ class TrainProcess {
 
         fun process() {
             timer(period = 1000L) {
-                val id = trainingQueue.peek()
-                val runtime = Runtime.getRuntime()
-                val command = "python D:/Android/AndroidStudioProjects/AUToSen/model/TrainModel.py $id"
-                val process = runtime.exec(command)
+                if (trainingQueue.isNotEmpty()) {
+                    println("START")
+                    val id = trainingQueue.peek()
+                    val runtime = Runtime.getRuntime()
+                    val command = "python D:/Android/AndroidStudioProjects/AUToSen/model/TrainModel.py $id"
+                    val process = runtime.exec(command)
 
-                val br = BufferedReader(InputStreamReader(process.inputStream))
-                val textFromPython = br.readLine()
-                println(textFromPython)
+                    val br = BufferedReader(InputStreamReader(process.inputStream))
+                    var textFromPython = br.readLine()
+                    println(textFromPython)
+                    while (textFromPython != null) {
+                        println(textFromPython)
+                        textFromPython = br.readLine()
+                    }
 
-                trainingQueue.poll()
+                    //if (textFromPython == "OK") println(textFromPython)
+                    //else println("Training Model Failed: ${trainingQueue.peek()}")
+
+                    trainingQueue.poll()
+                    println("END")
+                }
             }
-
-
         }
     }
 }

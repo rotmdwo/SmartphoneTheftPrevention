@@ -5,7 +5,7 @@ import sys
 
 X = []
 secondDataList2D = []
-num = 0.08771935
+#num = 0.08771935
 for j in range(64):
     oneOver64HzDataList1D = []
     for k in range(9):

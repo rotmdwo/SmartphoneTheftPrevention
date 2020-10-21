@@ -153,9 +153,11 @@ class Controller {
     @PostMapping("/checkModel")
     fun checkIfModelExists(@RequestBody userId: String): ApiResponse {
         val id = userId.substring(1, userId.lastIndex)
+        val secsPath = "D:/Android/AndroidStudioProjects/AUToSen/model/models/$id.h5"
+        val file = File(secsPath)
 
-        // TODO 구현
-        return ApiResponse.ok()
+        if (file.exists()) return ApiResponse.ok("Exists")
+        else return ApiResponse.ok("Not Exists")
     }
 
     @PostMapping("/savePic")

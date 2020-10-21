@@ -249,6 +249,7 @@ class MainActivity : AppCompatActivity() {
                 if (!hasModel) {
                     Toast.makeText(applicationContext,
                         "아직 만들어진 모델이 없습니다.", Toast.LENGTH_SHORT).show()
+                    buttonView.isChecked = false;
                 } else {
                     buttonView.text = "보안기능 끄기"
                     isPredictionStopped = false

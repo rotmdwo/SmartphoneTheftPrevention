@@ -1,5 +1,6 @@
 package edu.cs.skku.autosen_server
 
+import edu.cs.skku.autosen_server.train.TrainProcess.Companion.process
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import java.io.*
@@ -10,5 +11,6 @@ import kotlin.concurrent.timer
 open class ServerApplication
 
 fun main() {
+    process()
     runApplication<ServerApplication>()
 }

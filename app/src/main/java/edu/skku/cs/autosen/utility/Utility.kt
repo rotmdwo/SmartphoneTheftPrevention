@@ -509,12 +509,6 @@ fun sendPicture(userId: String, pic: ByteArray) {
     }
 }
 
-fun sendPicture(userId: String, pic: ByteArray) {
-    runBlocking {
-        val response = ServerApi.instance.savePicture(PictureData(userId, pic)).data
-    }
-}
-
 class Utility {
 
 }
