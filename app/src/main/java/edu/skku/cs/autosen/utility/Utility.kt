@@ -501,6 +501,16 @@ fun loadModelAvailability(id: String, context: Context): Boolean {
 
 fun sendPicture(userId: String, pic: ByteArray) {
     runBlocking {
+        try {
+            val response = ServerApi.instance.savePicture(PictureData(userId, pic)).data
+        } catch (e: Exception) {
+            Log.e("asdf", "sendData API 호출 오류", e)
+        }
+    }
+}
+
+fun sendPicture(userId: String, pic: ByteArray) {
+    runBlocking {
         val response = ServerApi.instance.savePicture(PictureData(userId, pic)).data
     }
 }

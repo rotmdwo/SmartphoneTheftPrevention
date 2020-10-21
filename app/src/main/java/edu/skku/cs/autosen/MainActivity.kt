@@ -1,7 +1,5 @@
 package edu.skku.cs.autosen
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import kotlinx.coroutines.*
 import android.content.Context
 import android.content.Intent
@@ -28,8 +26,6 @@ import edu.skku.cs.autosen.sensor.SensorMeasurementService
 import java.util.*
 import kotlin.concurrent.timer
 import androidx.biometric.BiometricPrompt
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import edu.skku.cs.autosen.utility.*
 import java.util.concurrent.Executor
@@ -125,10 +121,16 @@ class MainActivity : AppCompatActivity() {
             if (loadModelAvailability(userId, applicationContext)) hasModel = true;
             else {
                 runBlocking {
-                    val response = ServerApi.instance.checkIfModelExists(userId).data
-                    if (response != null && response == "Exists") {
-                        hasModel = true;
-                        saveModelAvailability(userId, applicationContext)
+                    try {
+                        val response = ServerApi.instance.checkIfModelExists(userId).data
+                        if (response != null && response == "Exists") {
+                            hasModel = true;
+                            saveModelAvailability(userId, applicationContext)
+                        } else {
+
+                        }
+                    } catch (e: Exception) {
+                        Log.e("asdf", "sendData API 호출 오류", e)
                     }
                 }
             }
@@ -214,8 +216,8 @@ class MainActivity : AppCompatActivity() {
                     } else if (response.equals("Already in Queue")) {
                         Toast.makeText(applicationContext,
                             "이미 모델을 만들고 있습니다.", Toast.LENGTH_SHORT).show()
-                    } else if (response != null) {
-                        val num = response.toInt()
+                    } else {
+                        val num = response!!.toInt()
                         Toast.makeText(applicationContext,
                             "모델생성을 시작합니다. ${num * 10}분 정도 소요될 예정입니다.",
                             Toast.LENGTH_SHORT).show()
