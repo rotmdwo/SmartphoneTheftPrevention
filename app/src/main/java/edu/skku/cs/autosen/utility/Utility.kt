@@ -7,10 +7,12 @@ import android.util.Log
 import android.widget.Toast
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
-import edu.skku.cs.autosen.Data
+import edu.skku.cs.autosen.dataType.SensorData
 import edu.skku.cs.autosen.MainActivity
 import edu.skku.cs.autosen.MainActivity.Companion.authentication
 import edu.skku.cs.autosen.api.ServerApi
+import edu.skku.cs.autosen.api.response.ApiResponse
+import edu.skku.cs.autosen.dataType.PictureData
 import kotlinx.coroutines.runBlocking
 
 
@@ -330,7 +332,7 @@ fun authenticateData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magne
         totalData.put("sec" + i, secondData)
     }
 
-    val data = Data(userId, 0, totalData)
+    val data = SensorData(userId, 0, totalData)
 
     runBlocking {
         try {
@@ -378,7 +380,8 @@ fun uploadData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magnetomete
         totalData.put("sec" + (secsUploaded + i + 1), secondData)
     }
 
-    val data = Data(userId, secsUploaded + 5, totalData)
+    val data =
+        SensorData(userId, secsUploaded + 5, totalData)
 
     runBlocking {
         try {
@@ -494,6 +497,12 @@ fun saveModelAvailability(id: String, context: Context) {
 fun loadModelAvailability(id: String, context: Context): Boolean {
     val pref = context.getSharedPreferences("model", Activity.MODE_PRIVATE)
     return pref.getBoolean(id, false)
+}
+
+fun sendPicture(userId: String, pic: ByteArray) {
+    runBlocking {
+        val response = ServerApi.instance.savePicture(PictureData(userId, pic)).data
+    }
 }
 
 class Utility {

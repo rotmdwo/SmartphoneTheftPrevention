@@ -25,16 +25,13 @@ import kotlinx.android.synthetic.main.activity_main.*
 
 import edu.skku.cs.autosen.sensor.MyReceiver
 import edu.skku.cs.autosen.sensor.SensorMeasurementService
-import edu.skku.cs.autosen.utility.loadID
-import edu.skku.cs.autosen.utility.saveID
 import java.util.*
 import kotlin.concurrent.timer
 import androidx.biometric.BiometricPrompt
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import edu.skku.cs.autosen.utility.loadModelAvailability
-import edu.skku.cs.autosen.utility.saveModelAvailability
+import edu.skku.cs.autosen.utility.*
 import java.util.concurrent.Executor
 
 const val RESULT_CODE = 101
@@ -55,6 +52,7 @@ class MainActivity : AppCompatActivity() {
         var isPredictionSwitchOn = false
 
         lateinit var pic: Bitmap
+        lateinit var picByteArray: ByteArray
         lateinit var executer: Executor
         lateinit var biometricPrompt: BiometricPrompt
         lateinit var promptInfo: BiometricPrompt.PromptInfo
@@ -74,23 +72,25 @@ class MainActivity : AppCompatActivity() {
                                                    errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
                     Toast.makeText(applicationContext,
-                        "Authentication error: $errString", Toast.LENGTH_SHORT)
-                        .show()
+                        "인증에러. 서버에 사진이 전송됩니다.", Toast.LENGTH_SHORT).show()
+
+                    sendPicture(userId, picByteArray)
                 }
 
                 override fun onAuthenticationSucceeded(
                     result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
                     Toast.makeText(applicationContext,
-                        "Authentication succeeded!", Toast.LENGTH_SHORT)
+                        "인증성공", Toast.LENGTH_SHORT)
                         .show()
                 }
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    Toast.makeText(applicationContext, "Authentication failed",
-                        Toast.LENGTH_SHORT)
-                        .show()
+                    Toast.makeText(applicationContext, "인증실패. 서버에 사진이 전송됩니다.",
+                        Toast.LENGTH_SHORT).show()
+
+                    sendPicture(userId, picByteArray)
                 }
             })
             promptInfo = BiometricPrompt.PromptInfo.Builder()

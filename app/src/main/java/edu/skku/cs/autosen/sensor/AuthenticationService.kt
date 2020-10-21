@@ -18,6 +18,7 @@ import edu.skku.cs.autosen.MainActivity
 import edu.skku.cs.autosen.MainActivity.Companion.isPredictionServiceDestroyed
 import edu.skku.cs.autosen.MainActivity.Companion.isPredictionStopped
 import edu.skku.cs.autosen.MainActivity.Companion.pic
+import edu.skku.cs.autosen.MainActivity.Companion.picByteArray
 import edu.skku.cs.autosen.R
 import edu.skku.cs.autosen.utility.*
 import kotlin.concurrent.timer
@@ -85,6 +86,7 @@ class AuthenticationService : Service() {
                 bundle.putByteArray("pic", data)
                 resultReceiver.send(101, bundle)
 
+                picByteArray = data
                 val bitmap = BitmapFactory.decodeByteArray(data, 0, data.size)
                 val matrix = Matrix()
                 matrix.setRotate(270.0f, (bitmap.width / 2).toFloat(), (bitmap.height / 2).toFloat())

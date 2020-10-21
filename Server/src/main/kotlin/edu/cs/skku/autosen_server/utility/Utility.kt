@@ -12,6 +12,12 @@ fun writeFloatToBinaryFile(dataPath: String, nums: FloatArray) {
     writer.close()
 }
 
+fun writePicToBinaryFile(dataPath: String, pic: ByteArray) {
+    val writer = DataOutputStream(BufferedOutputStream(FileOutputStream(dataPath)))
+    writer.write(pic)
+    writer.close()
+}
+
 fun readFloatFromBinaryFile(dataPath: String): Float {
     val reader = DataInputStream(FileInputStream(dataPath))
     return reader.readFloat()

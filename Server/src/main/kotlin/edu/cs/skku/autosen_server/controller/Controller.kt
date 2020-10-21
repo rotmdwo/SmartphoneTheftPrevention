@@ -1,16 +1,17 @@
 package edu.cs.skku.autosen_server.controller
 
-import edu.cs.skku.autosen_server.Data
+import edu.cs.skku.autosen_server.dataType.SensorData
 import edu.cs.skku.autosen_server.common.ApiResponse
+import edu.cs.skku.autosen_server.dataType.PictureData
 import edu.cs.skku.autosen_server.train.TrainProcess.Companion.trainingQueue
 import edu.cs.skku.autosen_server.utility.writeFloatToBinaryFile
+import edu.cs.skku.autosen_server.utility.writePicToBinaryFile
 import org.springframework.web.bind.annotation.*
 import java.io.*
 import java.lang.StringBuilder
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
-import java.util.*
 import kotlin.collections.ArrayList
 
 @RestController
@@ -32,10 +33,10 @@ class Controller {
 
 
     @PostMapping("/saveData") // 클라이언트에서 해당 링크를 실행하면 아래의 메서드가 실행됨
-    fun saveData(@RequestBody incomingData: Data): ApiResponse {
-        val userId = incomingData.userId
-        val secs = incomingData.secs
-        val data = incomingData.data
+    fun saveData(@RequestBody incomingSensorData: SensorData): ApiResponse {
+        val userId = incomingSensorData.userId
+        val secs = incomingSensorData.secs
+        val data = incomingSensorData.data
 
         //val dataPath = "/Users/sungjaelee/Desktop/Android/SmartphoneTheftPrevention/data/user_data/" + userId + ".txt"
         //val secsPath = "/Users/sungjaelee/Desktop/Android/SmartphoneTheftPrevention/data/secs_data/" + userId + ".txt"
@@ -71,9 +72,9 @@ class Controller {
     }
 
     @PostMapping("/predict")
-    fun predict(@RequestBody incomingData: Data): ApiResponse {
-        val userId = incomingData.userId
-        val data = incomingData.data
+    fun predict(@RequestBody incomingSensorData: SensorData): ApiResponse {
+        val userId = incomingSensorData.userId
+        val data = incomingSensorData.data
         val dataArray = ArrayList<Float>(9 * 64 * 1)
 
         val fiveSecsDataIterator = data.iterator()
@@ -155,5 +156,15 @@ class Controller {
 
         // TODO 구현
         return ApiResponse.ok()
+    }
+
+    @PostMapping("/savePic")
+    fun savePicture(@RequestBody data: PictureData): ApiResponse {
+        val id = data.userId
+        val pic = data.picture
+        val path = "D:/Android/AndroidStudioProjects/AUToSen/UnauthorizedPics/${id}_${System.currentTimeMillis()}.bin"
+        writePicToBinaryFile(path, pic)
+
+        return ApiResponse.ok("Saved")
     }
 }
