@@ -2,12 +2,16 @@ package edu.cs.skku.autosen_server.controller
 
 import edu.cs.skku.autosen_server.Data
 import edu.cs.skku.autosen_server.common.ApiResponse
+import edu.cs.skku.autosen_server.train.TrainProcess.Companion.trainingQueue
+import edu.cs.skku.autosen_server.utility.writeFloatToBinaryFile
 import org.springframework.web.bind.annotation.*
 import java.io.*
 import java.lang.StringBuilder
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
+import java.util.*
+import kotlin.collections.ArrayList
 
 @RestController
 @RequestMapping("/api/v1")
@@ -16,7 +20,7 @@ class Controller {
     fun getSecs(@RequestBody userId: String): ApiResponse {
         val id = userId.substring(1, userId.lastIndex)
         //val secsPath = "/Users/sungjaelee/Desktop/Android/SmartphoneTheftPrevention/data/secs_data/" + id + ".txt"
-        val secsPath = "D:/Android/AndroidStudioProjects/AUToSen/data/secs_data/" + id + ".txt"
+        val secsPath = "D:/Android/AndroidStudioProjects/AUToSen/data/secs_data/${id}.txt"
         val file = File(secsPath)
         if (!file.exists()) {
             return ApiResponse.ok("0")
@@ -93,7 +97,7 @@ class Controller {
         }
 
         val runtime = Runtime.getRuntime()
-        var stringBuilder = StringBuilder("python D:/Android/AndroidStudioProjects/AUToSen/model/LoadModel.py")
+        val stringBuilder = StringBuilder("python D:/Android/AndroidStudioProjects/AUToSen/model/LoadModel.py")
 
         for (i in 0 until 1) {
             for (j in 0 until 64) {
@@ -125,21 +129,31 @@ class Controller {
                 return ApiResponse.ok("false")
             }
         } else {
-            return ApiResponse.ok("error")
+            //return ApiResponse.ok("error")
+            return ApiResponse.error("error")
         }
     }
 
-    fun writeFloatToBinaryFile(dataPath: String, nums: FloatArray) {
-        val writer = DataOutputStream(BufferedOutputStream(FileOutputStream(dataPath, true)))
-        for (i in 0 until 9) {
-            writer.writeFloat(nums[i])
+    @PostMapping("/buildModel")
+    fun buildModel(@RequestBody userId: String): ApiResponse {
+        val id = userId.substring(1, userId.lastIndex)
+        val secsPath = "D:/Android/AndroidStudioProjects/AUToSen/data/secs_data/${id}.txt"
+        val file = File(secsPath)
+        if (!file.exists()) {
+            return ApiResponse.error("No Data")
+        } else if (trainingQueue.contains(id)) {
+            return ApiResponse.error("Already in Queue")
+        } else {
+            trainingQueue.add(id)
+            return ApiResponse.ok("${trainingQueue.size}")
         }
-        writer.flush()
-        writer.close()
     }
 
-    fun readFloatFromBinaryFile(dataPath: String): Float {
-        val reader = DataInputStream(FileInputStream(dataPath))
-        return reader.readFloat()
+    @PostMapping("/checkModel")
+    fun checkIfModelExists(@RequestBody userId: String): ApiResponse {
+        val id = userId.substring(1, userId.lastIndex)
+
+        // TODO 구현
+        return ApiResponse.ok()
     }
 }

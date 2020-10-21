@@ -2,9 +2,7 @@ package edu.skku.cs.autosen.utility
 
 import android.app.*
 import android.content.Context
-import android.graphics.Color
 import android.net.ConnectivityManager
-import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import com.google.firebase.database.DatabaseReference
@@ -12,7 +10,6 @@ import com.google.firebase.database.FirebaseDatabase
 import edu.skku.cs.autosen.Data
 import edu.skku.cs.autosen.MainActivity
 import edu.skku.cs.autosen.MainActivity.Companion.authentication
-import edu.skku.cs.autosen.R
 import edu.skku.cs.autosen.api.ServerApi
 import kotlinx.coroutines.runBlocking
 
@@ -484,6 +481,19 @@ fun loadID(context: Context): String {
     val id = pref.getString("id", "")
     if (id != null) return id
     else return ""
+}
+
+fun saveModelAvailability(id: String, context: Context) {
+    val pref = context.getSharedPreferences("model", Activity.MODE_PRIVATE)
+    val editor = pref.edit()
+    editor.clear()
+    editor.putBoolean(id, true)
+    editor.commit()
+}
+
+fun loadModelAvailability(id: String, context: Context): Boolean {
+    val pref = context.getSharedPreferences("model", Activity.MODE_PRIVATE)
+    return pref.getBoolean(id, false)
 }
 
 class Utility {

@@ -19,6 +19,12 @@ interface ServerApi {
     @POST("/api/v1/predict")
     suspend fun predict(@Body data: Data): ApiResponse<String>
 
+    @POST("/api/v1/buildModel")
+    suspend fun buildModel(@Body userId: String): ApiResponse<String>
+
+    @POST("/api/v1/checkModel")
+    suspend fun checkIfModelExists(@Body userId: String): ApiResponse<String>
+
     companion object {
         val instance = ApiGenerator().generate(ServerApi::class.java)
     }

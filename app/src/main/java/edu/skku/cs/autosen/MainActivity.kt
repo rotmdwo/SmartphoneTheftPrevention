@@ -33,6 +33,8 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import edu.skku.cs.autosen.utility.loadModelAvailability
+import edu.skku.cs.autosen.utility.saveModelAvailability
 import java.util.concurrent.Executor
 
 const val RESULT_CODE = 101
@@ -47,6 +49,7 @@ class MainActivity : AppCompatActivity() {
         var isServiceDestroyed =false
         var isPredictionServiceDestroyed = false
         var authentication = ""
+        var hasModel = false
 
         var isDataSwitchOn = false
         var isPredictionSwitchOn = false
@@ -118,6 +121,19 @@ class MainActivity : AppCompatActivity() {
             infoText.text = "어서오세요, ${userId}님!"
         } else infoText.text = "Welcome, ${userId}!"
 
+        if (!hasModel) {
+            if (loadModelAvailability(userId, applicationContext)) hasModel = true;
+            else {
+                runBlocking {
+                    val response = ServerApi.instance.checkIfModelExists(userId).data
+                    if (response != null && response == "Exists") {
+                        hasModel = true;
+                        saveModelAvailability(userId, applicationContext)
+                    }
+                }
+            }
+        }
+
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         @RequiresApi(Build.VERSION_CODES.M)
         if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
@@ -187,7 +203,38 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        trainButton.setOnClickListener {
+            runBlocking {
+                try {
+                    val response = ServerApi.instance.buildModel(userId).data
 
+                    if (response.equals("No Data")) {
+                        Toast.makeText(applicationContext,
+                            "데이터를 먼저 수집해주세요.", Toast.LENGTH_SHORT).show()
+                    } else if (response.equals("Already in Queue")) {
+                        Toast.makeText(applicationContext,
+                            "이미 모델을 만들고 있습니다.", Toast.LENGTH_SHORT).show()
+                    } else if (response != null) {
+                        val num = response.toInt()
+                        Toast.makeText(applicationContext,
+                            "모델생성을 시작합니다. ${num * 10}분 정도 소요될 예정입니다.",
+                            Toast.LENGTH_SHORT).show()
+                        timer(period = 60000L) {
+                            if (hasModel) this.cancel()
+                            runBlocking {
+                                val response2 = ServerApi.instance.checkIfModelExists(userId).data
+                                if (response2 != null && response2 == "Exists") {
+                                    hasModel = true;
+                                    saveModelAvailability(userId, applicationContext)
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("asdf", "sendData API 호출 오류", e)
+                }
+            }
+        }
 
 
 
@@ -197,16 +244,20 @@ class MainActivity : AppCompatActivity() {
 
         predictSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
             if (isChecked) {
-                // TODO: 모델 있는지 API로 확인
+                if (!hasModel) {
+                    Toast.makeText(applicationContext,
+                        "아직 만들어진 모델이 없습니다.", Toast.LENGTH_SHORT).show()
+                } else {
+                    buttonView.text = "보안기능 끄기"
+                    isPredictionStopped = false
+                    isPredictionSwitchOn = true
 
-                buttonView.text = "보안기능 끄기"
-                isPredictionStopped = false
-                isPredictionSwitchOn = true
+                    val intent = Intent(baseContext, AuthenticationService::class.java)
+                    intent.putExtra("receiver",receiver )
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
+                    else startService(intent)
+                }
 
-                val intent = Intent(baseContext, AuthenticationService::class.java)
-                intent.putExtra("receiver",receiver )
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent)
-                else startService(intent)
             } else {
                 buttonView.isClickable = false
                 buttonView.text = "보안기능 켜기"
@@ -226,6 +277,7 @@ class MainActivity : AppCompatActivity() {
                     predictSwitch.isClickable = true
                 }
                 textView.text = "현재까지 수집한 데이터: ${secsUploaded} / 21600"
+                if (hasModel) trainText.text = "등록된 모델이 있습니다."
             }
         }
     }
