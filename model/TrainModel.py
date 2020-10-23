@@ -32,35 +32,20 @@ def load_data(user_id: str, pred_len: int):
             #num_of_other_users += 1
             DataIO.read_data("../data/user_data/" + temp_user + ".txt", result, num, False)
 
-    # 데이터를 8:2 비율로 Train:Validation 데이터로 나눔
-    # 유저의 데이터의 개수가 달라지면 이 부분에서 오류가 남. 리스트의 차원이 정의되지 않음.
-    # 그러므로 안드로이드에서 데이터 수집할 때 정확히 5분 동안 같은 양의 데이터가 전송되게 해야 함!
     result = np.array(result)
     np.random.shuffle(result)
 
-    row = int(round(0.8 * result.shape[0]))
-    train = result[: row, :, :]
-    test = result[row:, :, :]
-
     # 인풋데이터 파싱
-    X_train = train[:, :, : -pred_len]
-    X_test = test[:, :, : -pred_len]
-
+    X_train = result[:, :, : -pred_len]
     y_train = []
-    y_test = []
 
     # 아웃풋데이터 파싱
-    for i in train:
+    for i in result:
         y_temp = []
         y_temp.append(i[0][sample_len])
         y_train.append(y_temp)
 
-    for i in test:
-        y_temp = []
-        y_temp.append(i[0][sample_len])
-        y_test.append(y_temp)
-
-    return [X_train, y_train, X_test, y_test, num_of_user_data, num_of_other_users_data]
+    return [X_train, y_train, num_of_user_data, num_of_other_users_data]
 
 
 epochs = 10
@@ -72,7 +57,7 @@ pred_len = 1
 user_id = sys.argv[1]
 #user_id = "seongjeong"
 
-X_train, y_train, X_test, y_test, num_of_user_data, num_of_other_users_data = load_data(user_id, pred_len)
+X_train, y_train, num_of_user_data, num_of_other_users_data = load_data(user_id, pred_len)
 
 # Input은 3차원 , Output은 2차원 데이터를 필요로 함
 # input_shape에서 맨 앞 차원(데이터 수)는 적지 않고 2차원, 3차원 크기만 씀
