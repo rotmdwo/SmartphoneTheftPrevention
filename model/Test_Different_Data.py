@@ -18,6 +18,7 @@ def load_data(user_id: str, pred_len: int, is_augmented: bool):
 
     for path in file_list:
         temp_user = path[path.index("\\") + 1: -4]
+        #temp_user = path[path.index("secs_data/") + 10: -4] # Mac
 
         # 테스트에는 사용되지만 학습에는 사용되지 않는 데이터
         if temp_user == "sungjae2" or temp_user == "chanhee":

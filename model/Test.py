@@ -1,5 +1,6 @@
 import numpy as np
 import DataIO
+import glob
 
 temp_result_list = []
 
@@ -15,3 +16,8 @@ for i in range(5):
     result[i*temp_result_array.shape[0]:(i+1)*temp_result_array.shape[0],:,:] = (temp_result_array + noise)
 
 print(result)
+
+file_list = glob.glob('../data/secs_data/*.txt')
+for path in file_list:
+    temp_user = path[path.index("secs_data/") + 10: -4]
+    print(temp_user)

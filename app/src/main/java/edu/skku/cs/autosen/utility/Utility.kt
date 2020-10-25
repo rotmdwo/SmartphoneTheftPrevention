@@ -18,7 +18,6 @@ import edu.skku.cs.autosen.MainActivity
 import edu.skku.cs.autosen.MainActivity.Companion.authentication
 import edu.skku.cs.autosen.R
 import edu.skku.cs.autosen.api.ServerApi
-import edu.skku.cs.autosen.api.response.ApiResponse
 import edu.skku.cs.autosen.dataType.PictureData
 import kotlinx.coroutines.runBlocking
 
