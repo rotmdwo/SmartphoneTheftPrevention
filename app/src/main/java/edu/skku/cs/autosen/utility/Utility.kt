@@ -2,19 +2,25 @@ package edu.skku.cs.autosen.utility
 
 import android.app.*
 import android.content.Context
+import android.content.Intent
+import android.graphics.*
+import android.hardware.Camera
 import android.net.ConnectivityManager
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import edu.skku.cs.autosen.dataType.SensorData
 import edu.skku.cs.autosen.MainActivity
 import edu.skku.cs.autosen.MainActivity.Companion.authentication
+import edu.skku.cs.autosen.R
 import edu.skku.cs.autosen.api.ServerApi
 import edu.skku.cs.autosen.api.response.ApiResponse
 import edu.skku.cs.autosen.dataType.PictureData
 import kotlinx.coroutines.runBlocking
-
 
 fun normalizeData(data: FloatArray, numOfData: IntArray, context: Context): Boolean {
     for (i in 0 until (numOfData.size - 1) / 5) {
@@ -305,10 +311,10 @@ fun sampleData(data: Array<ArrayList<FloatArray>>, SAMPLING_RATE: Int): ArrayLis
 }
 
 fun authenticateData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magnetometerData:  ArrayList<ArrayList<FloatArray>>,
-    gyroscopeData:  ArrayList<ArrayList<FloatArray>>, userId: String, SAMPLING_RATE: Int) {
+    gyroscopeData:  ArrayList<ArrayList<FloatArray>>, userId: String, SAMPLING_RATE: Int, context: Context, notificationManager: NotificationManager) {
     val totalData = HashMap<String, HashMap<String, HashMap<String, Float>>>()
 
-    for (i in 0 until 1) {
+    for (i in 0 until 5) {
         val secondData = HashMap<String, HashMap<String, Float>>()
 
         for (j in 0 until SAMPLING_RATE) {
@@ -339,11 +345,63 @@ fun authenticateData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magne
             val response = ServerApi.instance.predict(data).data
 
             if (response.equals("true")) {
-                authentication = "true " + System.currentTimeMillis()
+
             } else if (response.equals("false")) {
-                authentication = "false " + System.currentTimeMillis()
+                val surfaceTexture = SurfaceTexture(10)
+                MainActivity.camera = Camera.open(1)
+                MainActivity.camera.parameters.setPreviewSize(1,1)
+                MainActivity.camera.setPreviewTexture(surfaceTexture)
+                MainActivity.camera.startPreview()
+                MainActivity.camera.takePicture(null, null, Camera.PictureCallback { data, camera ->
+                    MainActivity.picByteArray = data
+                    val bitmap = BitmapFactory.decodeByteArray(data, 0, data.size)
+                    val matrix = Matrix()
+                    matrix.setRotate(270.0f, (bitmap.width / 2).toFloat(), (bitmap.height / 2).toFloat())
+                    MainActivity.pic = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+
+                    // intent에 500kb 이상 정도의 데이터를 넣으면 전달이 안 됨
+                    val newIntent = Intent(context, MainActivity::class.java)
+                    newIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    newIntent.putExtra("pic", true)
+                    val pendingIntent = PendingIntent.getActivity(context, 0, newIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        val notificationChannel = NotificationChannel(
+                            "Warning",
+                            "Unauthorized User", NotificationManager.IMPORTANCE_HIGH
+                        )
+
+                        notificationChannel.lightColor = Color.RED
+                        notificationChannel.description = "허가되지 않은 사용자"
+                        notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+
+                        notificationManager.createNotificationChannel(notificationChannel)
+
+                        var contentText = "허가되지 않은 사용자"
+                        if (MainActivity.LANGUAGE == "OTHERS") contentText = "Unauthorized User"
+
+                        val notificationBuilder = NotificationCompat.Builder(context, "Warning")
+                            .setContentTitle("Warning!")
+                            .setSmallIcon(R.drawable.common_full_open_on_phone)
+                            .setLargeIcon(MainActivity.pic)
+                            //.setSmallIcon(R.mipmap.ic_launcher)
+                            .setContentText(contentText)
+                            .setStyle(NotificationCompat.BigPictureStyle().bigPicture(MainActivity.pic))
+                            .setAutoCancel(true)
+                            .setOngoing(true)
+                            .setContentIntent(pendingIntent)
+
+                        //val notification = notificationBuilder.build()
+                        with(NotificationManagerCompat.from(context)) {
+                            notify(0, notificationBuilder.build())
+                        }
+                    }
+
+
+                })
             } else {
-                authentication = "error " + System.currentTimeMillis()
+
             }
         } catch (e: Exception) {
             Log.e("asdf", "sendData API 호출 오류", e)
@@ -508,7 +566,6 @@ fun sendPicture(userId: String, pic: ByteArray) {
         }
     }
 }
-
 
 class Utility {
 

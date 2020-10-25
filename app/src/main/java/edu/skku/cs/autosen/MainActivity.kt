@@ -55,6 +55,50 @@ class MainActivity : AppCompatActivity() {
         lateinit var camera: android.hardware.Camera
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.hasExtra("pic")) {
+            imageView.setImageBitmap(pic)
+            // Biometric Authentication
+            executer = ContextCompat.getMainExecutor(applicationContext)
+            biometricPrompt = BiometricPrompt(this, executer, object: BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationError(errorCode: Int,
+                                                   errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    Toast.makeText(applicationContext,
+                        "인증에러. 서버에 사진이 전송됩니다.", Toast.LENGTH_SHORT).show()
+
+                    sendPicture(userId, picByteArray)
+                }
+
+                override fun onAuthenticationSucceeded(
+                    result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    Toast.makeText(applicationContext,
+                        "인증성공", Toast.LENGTH_SHORT)
+                        .show()
+                }
+
+                override fun onAuthenticationFailed() {
+                    super.onAuthenticationFailed()
+                    Toast.makeText(applicationContext, "인증실패. 서버에 사진이 전송됩니다.",
+                        Toast.LENGTH_SHORT).show()
+
+                    sendPicture(userId, picByteArray)
+                }
+            })
+            promptInfo = BiometricPrompt.PromptInfo.Builder()
+                .setTitle("생체인증 필요")
+                .setSubtitle("거부시 사진전송")
+                //.setNegativeButtonText("cancel")
+                .setDeviceCredentialAllowed(true)
+                .build()
+
+            biometricPrompt.authenticate(promptInfo)
+        }
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -91,7 +135,7 @@ class MainActivity : AppCompatActivity() {
             })
             promptInfo = BiometricPrompt.PromptInfo.Builder()
                 .setTitle("생체인증 필요")
-                .setSubtitle("비정상적인 사용을 감지했습니다")
+                .setSubtitle("거부시 사진전송")
                 //.setNegativeButtonText("cancel")
                 .setDeviceCredentialAllowed(true)
                 .build()
@@ -146,8 +190,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         logoutButton.setOnClickListener {
-            isStopped = true
-            isPredictionStopped = true
+            LANGUAGE = "KOREAN"
+            userId = ""
+            secsUploaded = 0
+            isStopped = false
+            isPredictionStopped = false
+            isServiceDestroyed =false
+            isPredictionServiceDestroyed = false
+            authentication = ""
+            hasModel = false
+            isDataSwitchOn = false
+            isPredictionSwitchOn = false
 
             saveID("", applicationContext)
             val intent = Intent(baseContext, LoginActivity::class.java)
@@ -249,6 +302,7 @@ class MainActivity : AppCompatActivity() {
                 if (!hasModel) {
                     Toast.makeText(applicationContext,
                         "아직 만들어진 모델이 없습니다.", Toast.LENGTH_SHORT).show()
+                    buttonView.isChecked = false;
                 } else {
                     buttonView.text = "보안기능 끄기"
                     isPredictionStopped = false

@@ -1,15 +1,15 @@
 import numpy as np
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import db
+#import firebase_admin
+#from firebase_admin import credentials
+#from firebase_admin import db
 
-db_url = 'https://autosen-7011c.firebaseio.com/'
-firebase_json_location = "d:\\Android\\AndroidStudioProjects\\AUToSen\\model\\autosen-7011c-firebase-adminsdk-0fofm-ddf8fd56e1.json"
+#db_url = 'https://autosen-7011c.firebaseio.com/'
+#firebase_json_location = "d:\\Android\\AndroidStudioProjects\\AUToSen\\model\\autosen-7011c-firebase-adminsdk-0fofm-ddf8fd56e1.json"
 
 # 서비스 계정의 비공개 키 파일이름
-cred = credentials.Certificate(firebase_json_location)
+#cred = credentials.Certificate(firebase_json_location)
 
-default_app = firebase_admin.initialize_app(cred, {'databaseURL':db_url})
+#default_app = firebase_admin.initialize_app(cred, {'databaseURL':db_url})
 
 
 def read_data(path: str, result: list, secs: int, is_owner: bool):
@@ -39,7 +39,7 @@ def save_data(path: str, result: list, secs: int):
 
     f.close()
 
-
+'''
 def load_data_from_firebase(user_id: str, result: list):
     ref = db.reference("Sensor_Data")
     snapshot = ref.child(user_id).get()
@@ -59,5 +59,7 @@ def load_data_from_firebase(user_id: str, result: list):
         result.append(secondDataList2D)
 
     return len(result)
+'''
+
 
 
