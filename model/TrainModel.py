@@ -24,7 +24,7 @@ def load_data(user_id: str, pred_len: int):
             num_of_user_data += num
             DataIO.read_data("../data/user_data/" + temp_user + ".txt", result, num, True)
         else:
-            if num_of_other_users_data > 60000:
+            if num_of_other_users_data > 100000:
                 continue
             f = open(path, 'rt')
             num: int = int(f.read())
@@ -84,7 +84,7 @@ other_users_data_ratio = 1.0 - user_data_ratio
 K.set_value(model.optimizer.learning_rate, 0.0001)
 class_weight = {1: other_users_data_ratio, 0: user_data_ratio}
 
-model.fit(np.array(X_train), np.array(y_train), batch_size=1024, epochs=epochs, validation_split=0.1,
+model.fit(np.array(X_train), np.array(y_train), batch_size=1024, epochs=epochs, validation_split=0.2,
           class_weight=class_weight)
 
 model.save("D:/Android/AndroidStudioProjects/AUToSen/model/models/" + user_id + ".h5")
