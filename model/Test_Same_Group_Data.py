@@ -106,12 +106,18 @@ model.compile(loss= 'mse', optimizer= 'rmsprop')
 
 user_data_ratio = num_of_user_data / (num_of_user_data + num_of_other_users_data)
 other_users_data_ratio = 1.0 - user_data_ratio
+compensation = np.abs(user_data_ratio - other_users_data_ratio) / 2
 
 K.set_value(model.optimizer.learning_rate, 0.0001)
-class_weight = {1: other_users_data_ratio, 0: user_data_ratio}
+#class_weight = {1: other_users_data_ratio, 0: user_data_ratio}
+if other_users_data_ratio > user_data_ratio:
+    class_weight = {1: other_users_data_ratio - compensation, 0: user_data_ratio + compensation}
+else:
+    class_weight = {1: other_users_data_ratio + compensation, 0: user_data_ratio - compensation}
+
 model.fit(np.array(X_train), np.array(y_train), batch_size= 1024, epochs=epochs, validation_split= 0.222222, class_weight=class_weight)
 
-model.save("D:/Android/AndroidStudioProjects/AUToSen/model/models/" + user_id + "_same_data_not_augmented.h5")
+model.save("D:/Android/AndroidStudioProjects/AUToSen/model/models/" + user_id + "_same_data_not_augmented_compensated_weight.h5")
 
 
 # 테스트 값 예측

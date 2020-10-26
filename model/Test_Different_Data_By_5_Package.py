@@ -66,7 +66,7 @@ def load_data(user_id: str, pred_len: int, is_augmented: bool):
     return [X_train, y_train, num_of_user_data, num_of_other_users_data]
 
 
-epochs = 40
+epochs = 500
 num_neurons = 100
 seq_len = 64    # 64Hz의 센서 데이터 이용
 sample_len = 9 # 센서데이터 9개
@@ -74,7 +74,7 @@ pred_len = 1
 
 user_id = "sungjae"
 
-X_train, y_train, num_of_user_data, num_of_other_users_data = load_data(user_id, pred_len, is_augmented=False)
+X_train, y_train, num_of_user_data, num_of_other_users_data = load_data(user_id, pred_len, is_augmented=True)
 
 # Input은 3차원 , Output은 2차원 데이터를 필요로 함
 # input_shape에서 맨 앞 차원(데이터 수)는 적지 않고 2차원, 3차원 크기만 씀
@@ -98,7 +98,8 @@ user_data_ratio = num_of_user_data / (num_of_user_data + num_of_other_users_data
 other_users_data_ratio = 1.0 - user_data_ratio
 #compensation = np.abs(user_data_ratio - other_users_data_ratio) / 2
 #compensation = np.abs(user_data_ratio - other_users_data_ratio) * 3 / 5
-compensation = np.abs(user_data_ratio - other_users_data_ratio) * 2 / 3
+#compensation = np.abs(user_data_ratio - other_users_data_ratio) * 2 / 3
+compensation = np.abs(user_data_ratio - other_users_data_ratio) * 3 / 4
 
 K.set_value(model.optimizer.learning_rate, 0.0001)
 #class_weight = {1: other_users_data_ratio, 0: user_data_ratio}
@@ -108,7 +109,7 @@ else:
     class_weight = {1: other_users_data_ratio + compensation, 0: user_data_ratio - compensation}
 model.fit(np.array(X_train), np.array(y_train), batch_size= 1024, epochs=epochs, validation_split= 0.2, class_weight=class_weight)
 
-model.save("D:/Android/AndroidStudioProjects/AUToSen/model/models/" + user_id + "_different_data_not_augmented_compensated_weight3.h5")
+model.save("D:/Android/AndroidStudioProjects/AUToSen/model/models/" + user_id + "epochs_500_different_data_augmented_compensated_weight4_package.h5")
 
 # 테스트
 result = []
@@ -127,26 +128,32 @@ for i in result:
 X = np.array(X)
 y = np.array(y)
 
-total = len(X)
+total = int(len(X) / 5)
 truePositive = 0
 falsePositive = 0 # FP -> FAR
 falseNegative = 0 #FN -> FRR
 trueNegative = 0
 
-for i in range(len(X)):
-    input = X[i]
-    y_pred = model.predict(np.array(input).reshape(1, 64, 9)) # 3차원 배열로 바꿈
+for i in range(total):
+    numOfPositive = 0
 
-    if (y[i][0] == 1 and y_pred[0][0] >= 0.5) or (y[i][0] == 0 and y_pred[0][0] < 0.5):
+    for j in range(5):
+        input = X[i * 5 + j]
+        y_pred = model.predict(np.array(input).reshape(1, 64, 9))  # 3차원 배열로 바꿈
+
         if y_pred[0][0] >= 0.5:
+            numOfPositive += 1
+
+    if numOfPositive >= 3:
+        if y[i * 5][0] == 1:
             truePositive += 1
         else:
-            trueNegative += 1
-    else:
-        if y_pred[0][0] >= 0.5:
             falsePositive += 1
-        else:
+    else:
+        if y[i * 5][0] == 1:
             falseNegative += 1
+        else:
+            trueNegative += 1
 
 
 correctRatio = (truePositive + trueNegative) * 100 / total
