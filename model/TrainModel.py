@@ -82,10 +82,10 @@ user_data_ratio = num_of_user_data / (num_of_user_data + num_of_other_users_data
 other_users_data_ratio = 1.0 - user_data_ratio
 
 K.set_value(model.optimizer.learning_rate, 0.0001)
-class_weight = {1: other_users_data_ratio, 0: user_data_ratio}
+#class_weight = {1: other_users_data_ratio, 0: user_data_ratio}
 
-model.fit(np.array(X_train), np.array(y_train), batch_size=1024, epochs=epochs, validation_split=0.2,
-          class_weight=class_weight)
+#model.fit(np.array(X_train), np.array(y_train), batch_size=1024, epochs=epochs, validation_split=0.2,class_weight=class_weight)
+model.fit(np.array(X_train), np.array(y_train), batch_size=1024, epochs=epochs, validation_split=0.2)
 
 model.save("D:/Android/AndroidStudioProjects/AUToSen/model/models/" + user_id + ".h5")
 

@@ -34,7 +34,7 @@ try:
         if y_pred[0][0] >= 0.5:
             numOfPositive += 1
 
-    if numOfPositive / len(X) >= 0.5:
+    if numOfPositive >= 3:
         print("true")
     else:
         print("false")

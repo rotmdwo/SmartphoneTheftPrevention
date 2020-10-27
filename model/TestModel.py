@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 user_id = "sungjae"
 
-model = load_model("D:/Android/AndroidStudioProjects/AUToSen/model/models/" + user_id + "epochs_500_different_data_augmented_compensated_weight4_package.h5")
+model = load_model("D:/Android/AndroidStudioProjects/AUToSen/model/models/" + user_id + "epochs3_different_data_not_augmented_weight_package.h5")
 
 result = [] # 9개의 센서 데이터와 주인 여부를 1초 단위로 묶은 것 => 3차원 배열
 
@@ -55,7 +55,7 @@ frr = falseNegative * 100 / total
 ys = [correctRatio, far, frr]
 label = ["Correct", "FAR", "FRR"]
 plt.bar(label, ys)
-plt.title("%s - epochs= %d : %d/%d= %.2f%%, FAR= %.2f%%, FRR= %.2f%%" %(user_id, 40, truePositive + trueNegative, total, correctRatio, far, frr))
+plt.title("%s - epochs= %d : %d/%d= %.2f%%, FAR= %.2f%%, FRR= %.2f%%" %(user_id, 3, truePositive + trueNegative, total, correctRatio, far, frr))
 plt.ylabel("Ratio")
 plt.show()
 

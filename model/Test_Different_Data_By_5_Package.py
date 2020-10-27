@@ -66,7 +66,7 @@ def load_data(user_id: str, pred_len: int, is_augmented: bool):
     return [X_train, y_train, num_of_user_data, num_of_other_users_data]
 
 
-epochs = 500
+epochs = 10
 num_neurons = 100
 seq_len = 64    # 64Hz의 센서 데이터 이용
 sample_len = 9 # 센서데이터 9개
@@ -74,7 +74,7 @@ pred_len = 1
 
 user_id = "sungjae"
 
-X_train, y_train, num_of_user_data, num_of_other_users_data = load_data(user_id, pred_len, is_augmented=True)
+X_train, y_train, num_of_user_data, num_of_other_users_data = load_data(user_id, pred_len, is_augmented=False)
 
 # Input은 3차원 , Output은 2차원 데이터를 필요로 함
 # input_shape에서 맨 앞 차원(데이터 수)는 적지 않고 2차원, 3차원 크기만 씀
@@ -99,17 +99,22 @@ other_users_data_ratio = 1.0 - user_data_ratio
 #compensation = np.abs(user_data_ratio - other_users_data_ratio) / 2
 #compensation = np.abs(user_data_ratio - other_users_data_ratio) * 3 / 5
 #compensation = np.abs(user_data_ratio - other_users_data_ratio) * 2 / 3
-compensation = np.abs(user_data_ratio - other_users_data_ratio) * 3 / 4
+#compensation = np.abs(user_data_ratio - other_users_data_ratio) * 3 / 4
+#compensation = np.abs(user_data_ratio - other_users_data_ratio) * 4 / 5
 
 K.set_value(model.optimizer.learning_rate, 0.0001)
-#class_weight = {1: other_users_data_ratio, 0: user_data_ratio}
+class_weight = {1: other_users_data_ratio, 0: user_data_ratio}
+'''
 if other_users_data_ratio > user_data_ratio:
     class_weight = {1: other_users_data_ratio - compensation, 0: user_data_ratio + compensation}
 else:
     class_weight = {1: other_users_data_ratio + compensation, 0: user_data_ratio - compensation}
-model.fit(np.array(X_train), np.array(y_train), batch_size= 1024, epochs=epochs, validation_split= 0.2, class_weight=class_weight)
+'''
+#class_weight = {1: 0.5, 0: 0.5}
+#model.fit(np.array(X_train), np.array(y_train), batch_size= 1024, epochs=epochs, validation_split= 0.2, class_weight=class_weight)
+model.fit(np.array(X_train), np.array(y_train), batch_size= 1024, epochs=epochs, validation_split= 0.2)
 
-model.save("D:/Android/AndroidStudioProjects/AUToSen/model/models/" + user_id + "epochs_500_different_data_augmented_compensated_weight4_package.h5")
+model.save("D:/Android/AndroidStudioProjects/AUToSen/model/models/" + user_id + "epochs10_different_data_not_augmented_no_weight_package.h5")
 
 # 테스트
 result = []
