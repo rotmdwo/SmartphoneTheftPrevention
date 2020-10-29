@@ -1,16 +1,21 @@
 package edu.skku.cs.autosen.utility
 
+import android.Manifest
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.*
 import android.hardware.Camera
 import android.net.ConnectivityManager
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityCompat.requestPermissions
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import edu.skku.cs.autosen.dataType.SensorData
@@ -563,6 +568,15 @@ fun sendPicture(userId: String, pic: ByteArray) {
         } catch (e: Exception) {
             Log.e("asdf", "sendData API 호출 오류", e)
         }
+    }
+}
+
+fun checkPermission(activity: Activity, permissionType: String) {
+    val isGranted = ContextCompat.checkSelfPermission(activity, permissionType)
+    if (isGranted == PackageManager.PERMISSION_DENIED) {
+        val requestCode = 100
+        requestPermissions(activity, arrayOf(permissionType), requestCode)
+        ActivityCompat.shouldShowRequestPermissionRationale(activity, permissionType)
     }
 }
 

@@ -1,5 +1,6 @@
 package edu.skku.cs.autosen
 
+import android.Manifest
 import kotlinx.coroutines.*
 import android.content.Context
 import android.content.Intent
@@ -142,6 +143,9 @@ class MainActivity : AppCompatActivity() {
 
             biometricPrompt.authenticate(promptInfo)
         }
+
+        checkPermission(this, Manifest.permission.CAMERA)
+        checkPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
         dataSwitch.isChecked = isDataSwitchOn
         predictSwitch.isChecked = isPredictionSwitchOn
