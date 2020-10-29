@@ -415,7 +415,7 @@ fun authenticateData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magne
 
 
 fun uploadData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magnetometerData:  ArrayList<ArrayList<FloatArray>>,
-               gyroscopeData:  ArrayList<ArrayList<FloatArray>>, userId: String, SAMPLING_RATE: Int, secsUploaded: Int) {
+               gyroscopeData:  ArrayList<ArrayList<FloatArray>>, userId: String, SAMPLING_RATE: Int, secsUploaded: Int, context: Context) {
     val totalData = HashMap<String, HashMap<String, HashMap<String, Float>>>()
 
     for (i in 0..4) {
@@ -451,6 +451,7 @@ fun uploadData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magnetomete
 
             if (response.data.equals("Uploaded Successfully")) {
                 MainActivity.secsUploaded += 5
+                saveSecs(userId, MainActivity.secsUploaded, context)
             } else {
 
             }
@@ -458,40 +459,6 @@ fun uploadData(accelerometerData:  ArrayList<ArrayList<FloatArray>>, magnetomete
             Log.e("asdf", "sendData API 호출 오류", e)
         }
     }
-    /*
-    for (i in 0..4) {
-        val secondData = HashMap<String, Any>()
-
-        for (j in 0 until SAMPLING_RATE) {
-            val oneOver64HzData = HashMap<String, Any>()
-
-            oneOver64HzData.put("AccX", accelerometerData[i][j][0])
-            oneOver64HzData.put("AccY", accelerometerData[i][j][1])
-            oneOver64HzData.put("AccZ", accelerometerData[i][j][2])
-
-            oneOver64HzData.put("MagX", magnetometerData[i][j][0])
-            oneOver64HzData.put("MagY", magnetometerData[i][j][1])
-            oneOver64HzData.put("MagZ", magnetometerData[i][j][2])
-
-            oneOver64HzData.put("GyrX", gyroscopeData[i][j][0])
-            oneOver64HzData.put("GyrY", gyroscopeData[i][j][1])
-            oneOver64HzData.put("GyrZ", gyroscopeData[i][j][2])
-
-            secondData.put("data" + (j + 1) , oneOver64HzData)
-        }
-
-        totalData.put(userId + "/sec" + (secsUploaded + i + 1), secondData)
-    }
-
-    var reference = FirebaseDatabase.getInstance().getReference().child("Sensor_Data")
-    reference.updateChildren(totalData)
-
-    val idData = HashMap<String, Any>()
-    idData.put(userId, secsUploaded + 5)
-    reference = FirebaseDatabase.getInstance().getReference().child("Users")
-    reference.updateChildren(idData)
-
-     */
 }
 
 
@@ -559,6 +526,19 @@ fun saveModelAvailability(id: String, context: Context) {
 fun loadModelAvailability(id: String, context: Context): Boolean {
     val pref = context.getSharedPreferences("model", Activity.MODE_PRIVATE)
     return pref.getBoolean(id, false)
+}
+
+fun saveSecs(id: String, secs: Int, context: Context) {
+    val pref = context.getSharedPreferences("secs", Activity.MODE_PRIVATE)
+    val editor = pref.edit()
+    editor.clear()
+    editor.putInt(id, secs)
+    editor.commit()
+}
+
+fun loadSecs(id: String, context: Context): Int {
+    val pref = context.getSharedPreferences("secs", Activity.MODE_PRIVATE)
+    return pref.getInt(id, 0)
 }
 
 fun sendPicture(userId: String, pic: ByteArray) {

@@ -75,7 +75,7 @@ class SensorMeasurementService : Service() {
         val gyroSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
         val magneticSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
 
-        timer(period = 5500L) {
+        timer(period = 5000L) {
             // 각 센서 데이터. FloatArray - index 0: X, index 1: Y, index 2: Z, index 3: Active/Inactive
             val accelerometerData = Array(6, {ArrayList<FloatArray>()})
             val magnetometerData = Array(6, {ArrayList<FloatArray>()})
@@ -160,7 +160,7 @@ class SensorMeasurementService : Service() {
 
                             if (checkIfIdAvailable(userId, service)) {
                                 uploadData(sampledAccelerometerData, sampledMagnetometerData, sampledGyroscopeData,
-                                    userId, SAMPLING_RATE, secsUploaded)
+                                    userId, SAMPLING_RATE, secsUploaded, applicationContext)
 
                                 uploaded = true
 

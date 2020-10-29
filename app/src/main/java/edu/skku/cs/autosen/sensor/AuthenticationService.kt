@@ -70,7 +70,7 @@ class AuthenticationService : Service() {
         val resultReceiver = intent!!.getParcelableExtra<ResultReceiver>("receiver")
         val bundle = Bundle()
 
-        timer(period = 15000L) {
+        timer(period = 600000L) {
             if (isPredictionStopped) {
                 stopService(intent)
                 //sensorManager.unregisterListener(sensorListener)

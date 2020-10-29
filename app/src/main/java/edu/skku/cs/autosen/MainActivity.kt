@@ -165,6 +165,9 @@ class MainActivity : AppCompatActivity() {
             infoText.text = "어서오세요, ${userId}님!"
         } else infoText.text = "Welcome, ${userId}!"
 
+        secsUploaded = loadSecs(userId, applicationContext)
+        textView.text = "${secsUploaded} / 21600"
+
         if (!hasModel) {
             if (loadModelAvailability(userId, applicationContext)) hasModel = true;
             else {
@@ -229,6 +232,7 @@ class MainActivity : AppCompatActivity() {
                             if (response.data != null) {
                                 secsUploaded = response.data.toInt()
                                 textView.text = "${secsUploaded} / 21600"
+                                saveSecs(userId, secsUploaded, applicationContext)
                             }
 
                             if (secsUploaded >= 60 * 60 * 6) {
